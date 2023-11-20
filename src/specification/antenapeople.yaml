@@ -1,0 +1,1698 @@
+openapi: 3.0.1
+info: 
+  title: AntenaPeople API
+  version: 1.0.0
+  description: |
+    This general interface of the AntenaPeople API offers a suite of functionalities designed for employee self-service and streamlined HR operations. It enables employees to manage their personal profiles and holiday bookings
+
+    Key features include:
+    - Creation and update of employee profiles on the platform.
+    - Creation and update of employee personal holiday bookings.
+    - Overview and administration of all employee holiday bookings.
+
+    Authentication is required to interact with the API and is facilitated through secure JWT tokens.  The API exclusively exchanges data in JSON format for both requests and responses.
+servers: []
+tags:
+  - name: Authentication
+  - name: Employees
+  - name: Leave Requests
+paths:
+# authentication
+  /employees/email-status/{token}:
+    post:
+      tags:
+        - Authentication
+      operationId: EmployeeVerifyEmail
+      summary: Sets the employee's email status
+      description: This can only be done by a registered user confirming email address.
+      parameters: 
+        - $ref: '#/components/parameters/TokenPathParameter'
+      responses:
+        201:
+          $ref: '#/components/responses/CreatedEmployeeResponse'
+        401: 
+          $ref: "#/components/responses/UnauthorizedErrorResponse"
+        500: 
+          $ref: '#/components/responses/InternalServerErrorResponse'
+  /employees/forgot-password:
+    post:
+      tags:
+        - Authentication
+      operationId: EmployeeForgotPassword
+      summary: Sends password recovery email
+      description: This can be done by anyone if the employee already exists and email has been verified.
+      requestBody:
+        $ref: '#/components/requestBodies/ForgotPasswordEmployeeRequestBody'
+      responses:
+        204: 
+          $ref: '#/components/responses/NoContentResponse'
+        400:
+            $ref: '#/components/responses/BadRequestErrorResponse'
+        401:
+          # This should only return unverified email in this case
+          $ref: "#/components/responses/UnauthorizedErrorResponse"
+        500: 
+          $ref: '#/components/responses/InternalServerErrorResponse'
+  /employees/login:
+    post:
+      tags:
+        - Authentication
+      operationId: LoginEmployee
+      summary: Authenticate an employee and return an access token
+      description: This can be done by anyone if the employee's login details are valid and email has been verified.
+      requestBody:
+        $ref: '#/components/requestBodies/LoginEmployeeRequestBody'
+      responses:
+        200:
+          $ref: "#/components/responses/LoginEmployeeResponse"
+        400:
+            $ref: '#/components/responses/BadRequestErrorResponse'
+        401:
+          # This should only return unverified email in this case
+          $ref: "#/components/responses/UnauthorizedErrorResponse"
+        500: 
+          $ref: '#/components/responses/InternalServerErrorResponse'
+  /employees/register:
+    post:
+      tags:
+        - Authentication
+      operationId: CreateEmployeeLoginInfo
+      summary: Creates employee's login details
+      description: This can be done by anyone if the employee already exists and email has not been verified.
+      requestBody:
+        $ref: '#/components/requestBodies/CreateEmployeeLoginInfoRequestBody'
+      responses:
+        201:
+          $ref: '#/components/responses/CreatedEmployeeResponse'
+        400:
+            $ref: '#/components/responses/BadRequestErrorResponse'
+        500: 
+          $ref: '#/components/responses/InternalServerErrorResponse'
+  /employees/reset-password:
+    post:
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      operationId: EmployeeResetPassword
+      summary: Reset the password for an employee
+      description: This can be done by a user with the reset token.
+      requestBody:
+        $ref: '#/components/requestBodies/ResetPasswordEmployeeRequestBody'
+      responses:
+        204: 
+          $ref: '#/components/responses/NoContentResponse'
+        400:
+            $ref: '#/components/responses/BadRequestErrorResponse'
+        401: 
+          $ref: "#/components/responses/UnauthorizedErrorResponse"
+        500: 
+          $ref: '#/components/responses/InternalServerErrorResponse'
+# employees
+  /employees/@me:
+    get:
+      tags:
+        - Employees
+      security:
+        - bearerAuth: []
+      operationId: GetPersonalEmployeeInfo
+      summary: Gets personal employee information
+      description: This can only be done by the logged in user.
+      responses:
+        200: 
+          $ref: '#/components/responses/EmployeePersonalInfoResponse'
+        401: 
+          $ref: "#/components/responses/UnauthorizedErrorResponse"
+        500: 
+          $ref: '#/components/responses/InternalServerErrorResponse' 
+  /employees/@me/subordinates:
+    get:
+      tags:
+        - Employees
+      security:
+        - bearerAuth: []
+      operationId: ListSubordinates
+      summary: Lists subordinates
+      description: This can only be done by the logged in user.
+      parameters:
+        - $ref: '#/components/parameters/EmploymentStatusQueryParameter'
+      responses:
+        200: 
+          $ref: '#/components/responses/ListSubordinatesResponse'
+        400:
+          $ref: '#/components/responses/BadRequestErrorResponse'
+        401: 
+          $ref: "#/components/responses/UnauthorizedErrorResponse"
+        500: 
+          $ref: '#/components/responses/InternalServerErrorResponse' 
+# leave requests
+  /employees/@me/leave-approvals:
+    get:
+      tags:
+        - Leave Requests
+      security:
+        - bearerAuth: []
+      operationId: ListApprovalLeaveRequests
+      summary: Lists leave requests under employee's approval
+      description: This can only be done by the logged in user.
+      parameters:
+        - $ref: '#/components/parameters/StatusFilterQueryParameter'
+        - $ref: '#/components/parameters/PageNumberQueryParameter'
+        - $ref: '#/components/parameters/PageSizeQueryParameter'
+      responses:
+        200: 
+          $ref: "#/components/responses/ListApprovalLeaveRequestsResponse"
+        400:
+          $ref: '#/components/responses/BadRequestErrorResponse'
+        401: 
+          $ref: "#/components/responses/UnauthorizedErrorResponse"
+        500: 
+          $ref: '#/components/responses/InternalServerErrorResponse'
+  /employees/@me/leave-requests:
+    get:
+      tags:
+        - Leave Requests
+      security:
+        - bearerAuth: []
+      operationId: ListPersonalLeaveRequests
+      summary: Lists personal leave requests
+      description: This can only be done by the logged in user.
+      parameters:
+        - $ref: '#/components/parameters/StatusFilterQueryParameter'
+        - $ref: '#/components/parameters/PageNumberQueryParameter'
+        - $ref: '#/components/parameters/PageSizeQueryParameter'
+      responses:
+        200: 
+          $ref: "#/components/responses/ListPersonalLeaveRequestsResponse"
+        400:
+          $ref: '#/components/responses/BadRequestErrorResponse'
+        401: 
+          $ref: "#/components/responses/UnauthorizedErrorResponse"
+        500: 
+          $ref: '#/components/responses/InternalServerErrorResponse'
+    post:
+      tags:
+        - Leave Requests
+      security:
+        - bearerAuth: []
+      operationId: CreatePersonalLeaveRequest
+      summary: Creates a leave request
+      description: This can only be done by the logged in user.
+      requestBody:
+        $ref: '#/components/requestBodies/CreateLeaveRequestRequestBody'
+      responses:
+        201:
+          $ref: '#/components/responses/CreatedLeaveRequestResponse'
+        400:
+          $ref: '#/components/responses/BadRequestErrorResponse'
+        401: 
+          $ref: '#/components/responses/UnauthorizedErrorResponse'
+        500: 
+          $ref: '#/components/responses/InternalServerErrorResponse'
+  /leave-requests/{leaveRequestId}:
+    patch:
+        tags:
+          - Leave Requests
+        security:
+          - bearerAuth: []
+        operationId: UpdateLeaveRequestInfo
+        summary: Updates leave request information
+        description: This can be done by logged in user or relevant management
+        parameters: 
+        - $ref: '#/components/parameters/LeaveRequestIdPathParameter'
+        requestBody:
+          $ref: '#/components/requestBodies/UpdateLeaveRequestRequestBody'
+        responses:
+          204: 
+            $ref: '#/components/responses/NoContentResponse'
+          401: 
+            $ref: "#/components/responses/UnauthorizedErrorResponse"
+          400:
+            $ref: '#/components/responses/BadRequestErrorResponse'
+          404:
+            $ref: '#/components/responses/NotFoundErrorResponse'
+          500: 
+            $ref: '#/components/responses/InternalServerErrorResponse'
+  /leave-requests/{leaveRequestId}/signature-file:
+    post:
+        tags:
+          - Leave Requests
+        security:
+          - bearerAuth: []
+        operationId: UploadLeaveRequestSignatureFile
+        summary: Uploads Signature File and Attaches it to Leave Request
+        description: This can be done by logged in user or relevant management
+        parameters: 
+        - $ref: '#/components/parameters/LeaveRequestIdPathParameter'
+        requestBody:
+          $ref: '#/components/requestBodies/UploadLeaveRequestSignatureFileRequestBody'
+        responses:
+          201: 
+            $ref: '#/components/responses/UploadedLeaveRequestSignatureFileResponse'
+        #   401: 
+        #     $ref: "#/components/responses/UnauthorizedErrorResponse"
+        #   400:
+        #     $ref: '#/components/responses/BadRequestErrorResponse'
+        #   404:
+        #     $ref: '#/components/responses/NotFoundErrorResponse'
+        #   500: 
+        #     $ref: '#/components/responses/InternalServerErrorResponse'
+components:
+  parameters:
+    EmploymentStatusQueryParameter:
+      name: employmentStatus
+      in: query
+      description: Employment status filter.
+      schema:
+        allOf:
+          - $ref: '#/components/schemas/EmploymentStatusEnum'
+        default: 'CURRENT'
+    LeaveRequestIdPathParameter:
+      name: leaveRequestId
+      in: path
+      description: ID of a Leave Request
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PageNumberQueryParameter:
+      name: page[number]
+      in: query
+      description: Page Number (zero-based) for Pagination
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    PageSizeQueryParameter:
+      name: page[size]
+      in: query
+      description: Page Size for Pagination
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+    StatusFilterQueryParameter:
+      name: statusFilter
+      in: query
+      description: Leave Request Approval Status
+      required: true
+      schema:
+        $ref: '#/components/schemas/LeaveRequestStatusFilterEnum'
+    TokenPathParameter:
+      name: token
+      in: path
+      description: JWT token
+      required: true
+      schema:
+        type: string
+  requestBodies:
+    CreateEmployeeLoginInfoRequestBody:
+      description: Create Employee Login Info Request Body
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: '#/components/schemas/CreateEmployeeLoginInfo'
+          examples:
+            CreateEmployeeLoginInfo:
+              $ref: '#/components/examples/CreateEmployeeLoginInfoRequestBodyExample'
+    CreateLeaveRequestRequestBody:
+      description: Create Leave-Request Request Body
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: '#/components/schemas/CreateLeaveRequest'
+          examples:
+            CreateLeaveRequest:
+              $ref: '#/components/examples/CreateLeaveRequestRequestBodyExample'
+    ForgotPasswordEmployeeRequestBody:
+      description: Forgot Password Employee Request Body
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: '#/components/schemas/ForgotPasswordEmployee'
+          examples:
+            ForgotPasswordEmployee:
+              $ref: '#/components/examples/ForgotPasswordEmployeeRequestBodyExample'
+    LoginEmployeeRequestBody:
+      description: Login Employee Request Body
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: '#/components/schemas/LoginEmployee'
+          examples:
+            LoginEmployee:
+              $ref: '#/components/examples/LoginEmployeeRequestBodyExample'
+    ResetPasswordEmployeeRequestBody:
+      description: Reset Password Employee Request Body
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: '#/components/schemas/ResetPasswordEmployee'
+          examples:
+            ResetPasswordEmployee:
+              $ref: '#/components/examples/ResetPasswordEmployeeRequestBodyExample'
+    UpdateLeaveRequestRequestBody:
+      description: Update Leave-Request Request Body
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: '#/components/schemas/UpdateLeaveRequest'
+          encoding: 
+            signatureImage:
+              contentType: image/png
+          examples:
+            UpdateLeaveRequest:
+              $ref: '#/components/examples/UpdateLeaveRequestRequestBodyExample'
+    UploadLeaveRequestSignatureFileRequestBody:
+      description: Upload Leave-Request Signature Image
+      required: true
+      content: 
+        image/png:
+          schema:
+            type: string
+            format: binary
+  responses:
+    BadRequestErrorResponse:
+      description: Bad Request Error
+      content:
+        application/vnd.api+json:
+          schema: 
+            $ref: '#/components/schemas/Errors'
+          examples:
+            BadRequestError: 
+              $ref: '#/components/examples/BadRequestErrorResponseExample'
+    CreatedEmployeeResponse:
+      description: Created Employee Success Response
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: '#/components/schemas/CreatedEmployee'
+          examples:
+            CreatedEmployee:
+              $ref: '#/components/examples/CreatedEmployeeResponseExample'
+    CreatedLeaveRequestResponse:
+      description: Created Leave-Request Success Response
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: '#/components/schemas/CreatedLeaveRequest'
+          examples:
+            CreatedLeaveRequest:
+              $ref: '#/components/examples/CreatedLeaveRequestResponseExample'
+    EmployeePersonalInfoResponse:
+      description: Get Employee Info Success Response
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: '#/components/schemas/EmployeePersonalSummary'
+          examples:
+            EmployeePersonalSummary:
+              $ref: '#/components/examples/EmployeePersonalInfoResponseExample'
+    ForbiddenErrorResponse:
+      description: Forbidden Error
+      content:
+        application/vnd.api+json:
+          schema: 
+            $ref: '#/components/schemas/Errors'
+          examples:
+            ForbiddenError: 
+              $ref: '#/components/examples/ForbiddenErrorResponseExample'
+    InternalServerErrorResponse:
+      description: Internal Server Error
+      content:
+        application/vnd.api+json:
+          schema: 
+            $ref: '#/components/schemas/Errors'
+          examples:
+            InternalServerError: 
+              $ref: '#/components/examples/InternalServerErrorResponseExample'
+    ListApprovalLeaveRequestsResponse:
+      description: List Approval Leave Requests Success Response
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: '#/components/schemas/ApprovalLeaveRequests'
+          examples:
+            ApprovalLeaveRequests:
+              $ref: '#/components/examples/ApprovalLeaveRequestsResponseExample'
+    ListPersonalLeaveRequestsResponse:
+      description: List Personal Leave Requests Success Response
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: '#/components/schemas/PersonalLeaveRequestsSummary'
+          examples:
+            LeaveRequests:
+              $ref: '#/components/examples/PersonalLeaveRequestsResponseExample'
+    ListSubordinatesResponse:
+      description: List Subordinates Success Response
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: '#/components/schemas/SubordinatesSummary'
+          examples:
+            SubordinatesSummary:
+              $ref: '#/components/examples/SubordinatesResponseExample'
+    LoginEmployeeResponse:
+      description: Employee Login Success Response
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: '#/components/schemas/LoggedinEmployee'
+          examples:
+            LoggedinEmployee:
+              $ref: '#/components/examples/LoggedinEmployeeResponseExample'
+    NoContentResponse:
+      description: No Content Success Response
+    NotFoundErrorResponse:
+      description: Not Found Error
+      content:
+        application/vnd.api+json:
+          schema: 
+            $ref: '#/components/schemas/Errors'
+          examples:
+            NotFoundError: 
+              $ref: '#/components/examples/NotFoundErrorResponseExample'
+    UnauthorizedErrorResponse:
+      description: Unauthorized Error
+      content:
+        application/vnd.api+json:
+          schema: 
+            $ref: '#/components/schemas/Errors'
+          examples:
+            UnauthorizedError: 
+              $ref: '#/components/examples/UnauthorizedErrorResponseExample'
+    UploadedLeaveRequestSignatureFileResponse:
+      description: Created Leave-Request Signature File Success Response
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: '#/components/schemas/UploadedLeaveRequestSignatureFile'
+          examples:
+            UploadedLeaveRequestSignatureFile:
+              $ref: '#/components/examples/UploadedLeaveRequestSignatureFileResponseExample'
+  schemas:
+    ApprovalLeaveRequest:
+      allOf:
+        - $ref: '#/components/schemas/LeaveRequestSummary'
+        - type: object
+          required:
+            - relationships
+          properties:
+            relationships:
+              type: object
+              required:
+                - initiator
+                - substitute
+                - supervisor
+                - HR
+              properties:
+                initiator:
+                  type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: object
+                      required:
+                        - id
+                        - type
+                      properties:
+                        id:
+                          type: string
+                        type:
+                          $ref: '#/components/schemas/EmployeesTypeEnum'
+                substitute:
+                  type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: object
+                      required:
+                        - id
+                        - type
+                      properties:
+                        id:
+                          type: string
+                        type:
+                          $ref: '#/components/schemas/EmployeesTypeEnum'
+                supervisor:
+                  type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: object
+                      required:
+                        - id
+                        - type
+                      properties:
+                        id:
+                          type: string
+                        type:
+                          $ref: '#/components/schemas/EmployeesTypeEnum'
+                HR:
+                  type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: object
+                      required:
+                        - id
+                        - type
+                      properties:
+                        id:
+                          type: string
+                        type:
+                          $ref: '#/components/schemas/EmployeesTypeEnum'
+    ApprovalLeaveRequests:
+      title: ApprovalLeaveRequests
+      type: object
+      required:
+        - meta
+        - data
+        - included
+      properties:
+        meta:
+          type: object
+          required:
+            - page
+          properties:
+            page:
+              $ref: '#/components/schemas/PaginationMetadata'
+        data:
+          type: array
+          uniqueItems: true
+          minItems: 0
+          items: 
+            $ref: '#/components/schemas/ApprovalLeaveRequest'
+        included:
+          type: array
+          uniqueItems: true
+          minItems: 0
+          items: 
+            $ref: "#/components/schemas/EmployeeIncluded"
+    CreatedEmployee:
+      title: CreatedEmployee
+      type: object
+      required: 
+        - data
+      properties:
+        data:
+          type: object
+          required: 
+            - id
+            - type
+          properties:
+            id: 
+              type: string
+            type: 
+              $ref: '#/components/schemas/EmployeesTypeEnum'
+    CreatedLeaveRequest:
+      title: CreatedLeaveRequest
+      type: object
+      required: 
+        - data
+      properties:
+        data:
+          type: object
+          required: 
+            - id
+            - type
+          properties:
+            id: 
+              type: string
+              format: uuid
+            type: 
+              $ref: '#/components/schemas/LeaveRequestsTypeEnum'
+    CreateLeaveRequest:
+      title: CreateLeaveRequest
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - type
+            - attributes
+            - relationships
+          properties:
+            type:
+              $ref: "#/components/schemas/LeaveRequestsTypeEnum"
+            attributes:
+              type: object
+              required:
+                - startDate
+                - endDate
+                - workDays
+                - leaveType
+              properties:
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                workDays:
+                  type: integer
+                  format: int32
+                leaveType:
+                  $ref: '#/components/schemas/LeaveRequestLeaveTypeEnum'
+                leaveTypeDetails:
+                  type: string
+                  minLength: 2
+                  maxLength: 30
+            relationships:
+              type: object
+              required:
+                - substitute
+              properties:
+                substitute:
+                  type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: object
+                      required:
+                        - email
+                        - type
+                      properties:
+                        email:
+                          type: string
+                          format: email
+                        type:
+                          $ref: '#/components/schemas/EmployeesTypeEnum'
+    CreateEmployeeLoginInfo:
+      title: CreateEmployeeLoginInfo
+      type: object
+      required: 
+        - data
+      properties:
+        data:
+          type: object
+          required: 
+            - type
+            - attributes
+          properties:
+            type: 
+              $ref: '#/components/schemas/EmployeesTypeEnum'
+            attributes:
+              type: object
+              required:
+                - cnp
+                - email
+                - password
+                - confirmPassword
+              properties:
+                cnp:
+                  type: string
+                  minLength: 13
+                  maxLength: 13
+                  pattern: '^\d{13}$'
+                email:
+                  type: string
+                  format: email
+                  pattern: '^[^@]+@(antenagroup\.ro|intactmediagroup\.ro|antena3\.ro)$'
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                confirmPassword:
+                  type: string
+                  format: password
+    EmployeeIncluded:
+      title: EmployeeIncluded
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/EmployeesTypeEnum"
+        attributes:
+          type: object
+          required:
+            - name
+            - surname
+          properties:
+            name:
+              type: string
+            surname:
+              type: string
+            role:
+              type: string
+            email:
+              type: string
+              format: email
+    EmployeePersonalSummary:
+      title: EmployeePersonalSummary
+      type: object
+      required:
+        - data
+        - included
+      properties:
+        data:
+          type: object
+          required: 
+            - id
+            - type
+            - attributes
+            - relationships
+          properties:
+            id: 
+              $ref: '#/components/schemas/MeTypeEnum'
+            type:
+              $ref: '#/components/schemas/EmployeesTypeEnum'
+            attributes:
+              type: object
+              required:
+                - vacationDaysTotal
+                - vacationDaysLeft
+                - email
+              properties:
+                vacationDaysTotal:
+                  type: integer
+                  format: int32
+                vacationDaysLeft:
+                  type: integer
+                  format: int32
+                email:
+                  type: string
+                  format: email
+            relationships:
+              type: object
+              required:
+                - supervisor
+              properties:
+                supervisor:
+                  type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: object
+                      required:
+                        - id
+                        - type
+                      properties:
+                        id:
+                          type: string
+                        type:
+                          $ref: '#/components/schemas/EmployeesTypeEnum'
+        included:
+          type: array
+          uniqueItems: true
+          minItems: 0
+          items: 
+            $ref: "#/components/schemas/EmployeeIncluded"
+    EmployeesTypeEnum:
+      title: EmployeesTypeEnum
+      type: string
+      enum: [ employees ]
+    EmploymentStatusEnum:
+      title: EmploymentStatusEnum
+      type: string
+      enum: [ 'CURRENT', 'FORMER', 'ALL' ]
+    Error:
+      title: Error
+      type: object
+      required:
+        - code
+        - title
+      properties:
+        code:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        source:
+          oneOf:
+            - type: object
+              required:
+                - pointer
+              properties:
+                pointer:
+                  type: string
+            - type: object
+              required:
+                - parameter
+              properties:
+                parameter:
+                  type: string    
+    Errors:
+      title: Errors
+      type: object
+      required:
+        - errors
+        - meta
+      properties:
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Error'
+        meta:
+          type: object
+          required:
+            - status
+            - timestamp
+            - correlationId
+          properties:
+            status:
+              type: string
+            timestamp:
+              type: string
+              format: date-time
+            correlationId:
+              type: string
+    ForgotPasswordEmployee:
+      title: ForgotPasswordEmployee
+      type: object
+      required: 
+        - data
+      properties:
+        data:
+          type: object
+          required: 
+            - type
+            - attributes
+          properties:
+            type: 
+              $ref: '#/components/schemas/EmployeesTypeEnum'
+            attributes:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+    LeaveRequestIncluded:
+      title: LeaveRequestIncluded
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/LeaveRequestsTypeEnum"
+        attributes:
+          type: object
+          required:
+            - startDate
+            - endDate
+            - leaveType
+            - status
+          properties:
+            startDate:
+              type: string
+              format: date
+            endDate:
+              type: string
+              format: date
+            leaveType:
+              $ref: '#/components/schemas/LeaveRequestLeaveTypeEnum'
+            status:
+              $ref: '#/components/schemas/LeaveRequestStatusEnum'
+    LeaveRequestsTypeEnum:
+      title: LeaveRequestsTypeEnum
+      type: string
+      enum: [ leave-requests ]
+    LeaveRequestSignatureFileTypeEnum:
+      title: LeaveRequestSignatureFileTypeEnum
+      type: string
+      enum: [ signature-file ]
+    LeaveRequestSummary:
+      title: LeaveRequestSummary
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id: 
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/LeaveRequestsTypeEnum"
+        attributes:
+          type: object
+          required:
+            - startDate
+            - endDate
+            - workDays
+            - leaveType
+            - status
+            - createdAt
+            - modifiedAt
+          properties:
+            startDate:
+              type: string
+              format: date
+            endDate:
+              type: string
+              format: date
+            workDays:
+              type: integer
+              format: int32
+            leaveType:
+              $ref: '#/components/schemas/LeaveRequestLeaveTypeEnum'
+            leaveTypeDetails:
+              type: string
+              minLength: 2
+              maxLength: 30
+            status:
+              $ref: '#/components/schemas/LeaveRequestStatusEnum'
+            rejectReason:
+              type: string
+              maxLength: 50
+              nullable: true
+            createdAt:
+              type: string
+              format: date-time
+            modifiedAt:
+              type: string
+              format: date-time
+    LeaveRequestsSummary:
+      title: LeaveRequestsSummary
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          uniqueItems: true
+          minItems: 0
+          items: 
+            $ref: '#/components/schemas/LeaveRequestSummary'
+    LoggedinEmployee:
+      title: LoggedinEmployee
+      type: object
+      required: 
+        - data
+        - meta
+      properties:
+        data:
+          type: object
+          required: 
+            - type
+            - attributes
+          properties:
+            type: 
+              $ref: '#/components/schemas/TokensTypeEnum'
+            attributes:
+              type: object
+              required:
+                - accessToken
+                - expiresIn
+              properties:
+                accessToken:
+                  type: string
+                expiresIn:
+                  type: integer
+                  format: int32
+        meta:
+          type: object
+          required:
+            - timestamp
+          properties:
+            timestamp:
+              type: string
+              format: date-time
+    LoginEmployee:
+      title: LoginEmployee
+      type: object
+      required: 
+        - data
+      properties:
+        data:
+          type: object
+          required: 
+            - type
+            - attributes
+          properties:
+            type: 
+              $ref: '#/components/schemas/EmployeesTypeEnum'
+            attributes:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+    MeTypeEnum:
+      title: MeTypeEnum
+      type: string
+      enum: [ '@me' ]
+    PaginationMetadata:
+      title: PaginationMetadata
+      type: object
+      required:
+        - number
+        - size
+        - totalPages
+        - totalElements
+      properties:
+        number:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalPages:
+          type: integer
+          format: int32
+        totalElements:
+          type: integer
+          format: int32
+    PersonalLeaveRequestsSummary:
+      title: PersonalLeaveRequestsSummary
+      allOf:
+        - $ref: '#/components/schemas/LeaveRequestsSummary'
+        - type: object
+          required:
+            - meta
+          properties:
+            meta:
+              type: object
+              required:
+                - page
+              properties:
+                page:
+                  $ref: '#/components/schemas/PaginationMetadata'
+    ResetPasswordEmployee:
+      title: ResetPasswordEmployee
+      type: object
+      required: 
+        - data
+      properties:
+        data:
+          type: object
+          required: 
+            - type
+            - attributes
+          properties:
+            type: 
+              $ref: '#/components/schemas/EmployeesTypeEnum'
+            attributes:
+              type: object
+              required:
+                - password
+                - confirmPassword
+              properties:
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                confirmPassword:
+                  type: string
+                  format: password
+    LeaveRequestStatusEnum:
+      title: LeaveRequestStatusEnum
+      type: string
+      enum: [ 'AWAITING_SUBSTITUTE', 'AWAITING_SUPERVISOR', 'AWAITING_HR', 'APPROVED', 'DENIED' ]
+    LeaveRequestStatusFilterEnum:
+      title: LeaveRequestStatusFilterEnum
+      type: string
+      enum: [ 'PENDING', 'APPROVED', 'DENIED' ]
+    LeaveRequestLeaveTypeEnum:
+      title: LeaveRequestLeaveTypeEnum
+      type: string
+      enum: [ 'VACATION', 'EVENT_FAM', 'CHILD', 'NO_PAY', 'OTHER' ]
+    SubordinateSummary:
+      title: SubordinateSummary
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+        - relationships
+      properties:
+        id: 
+          type: string
+        type:
+          $ref: "#/components/schemas/EmployeesTypeEnum"
+        attributes:
+          type: object
+          required:
+            - name
+            - surname
+            - role
+          properties:
+            name:
+              type: string
+            surname:
+              type: string
+            role:
+              type: string
+            currentEmployee:
+              type: boolean
+        relationships:
+          type: object
+          required:
+            - recentLeaveRequests
+          properties:
+            recentLeaveRequests:
+              type: object
+              required:
+                - data
+              properties:
+                data:
+                  type: array
+                  uniqueItems: true
+                  minItems: 0
+                  items:
+                    type: object
+                    required:
+                      - id
+                      - type
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      type:
+                        $ref: '#/components/schemas/LeaveRequestsTypeEnum'
+    SubordinatesSummary:
+      title: SubordinatesSummary
+      type: object
+      required:
+        - data
+        - included
+      properties:
+        data:
+          type: array
+          uniqueItems: true
+          minItems: 0
+          items: 
+            $ref: '#/components/schemas/SubordinateSummary'
+        included:
+          type: array
+          uniqueItems: true
+          minItems: 0
+          items:
+            $ref: "#/components/schemas/LeaveRequestIncluded"
+    TokensTypeEnum:
+      title: TokensTypeEnum
+      type: string
+      enum: [ 'tokens' ]
+    UpdateLeaveRequest:
+      title: UpdateLeaveRequest
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - type
+            - attributes
+          properties:
+            type:
+              $ref: '#/components/schemas/LeaveRequestsTypeEnum'
+            attributes:
+              type: object
+              properties:
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                workDays:
+                  type: integer
+                  format: int32
+                leaveType:
+                  $ref: '#/components/schemas/LeaveRequestLeaveTypeEnum'
+                leaveTypeDetails:
+                  type: string
+                  minLength: 2
+                  maxLength: 30
+                status:
+                  $ref: '#/components/schemas/LeaveRequestStatusEnum'
+                rejectReason:
+                  type: string
+                  maxLength: 50
+                  nullable: true
+    UpdatedLeaveRequestIncluded:
+      title: UpdatedLeaveRequestIncluded
+      type: object
+      required:
+        - id
+        - type
+        - attributes
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          $ref: "#/components/schemas/LeaveRequestsTypeEnum"
+        attributes:
+          type: object
+          required:
+            - status
+          properties:
+            status:
+              $ref: '#/components/schemas/LeaveRequestStatusEnum'
+    UploadedLeaveRequestSignatureFile:
+      title: UploadedLeaveRequestSignatureFile
+      type: object
+      required: 
+        - data
+        - included
+      properties:
+        data:
+          type: object
+          required: 
+            - id
+            - type
+            - relationships
+          properties:
+            id: 
+              type: string
+              format: uuid
+            type: 
+              $ref: '#/components/schemas/LeaveRequestSignatureFileTypeEnum'
+            relationships:
+              type: object
+              required:
+                - leaveRequest
+              properties:
+                leaveRequest:
+                  type: object
+                  required:
+                    - data
+                  properties:
+                    data:
+                      type: object
+                      required:
+                        - id
+                        - type
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        type:
+                          $ref: '#/components/schemas/LeaveRequestsTypeEnum'
+        included:
+          type: array
+          uniqueItems: true
+          minItems: 0
+          items: 
+            $ref: "#/components/schemas/UpdatedLeaveRequestIncluded"
+  examples:
+    ApprovalLeaveRequestsResponseExample:
+      value: {
+        "meta": {
+          "page": {
+            "number": 0,
+            "size": 1,
+            "totalPages": 1,
+            "totalElements": 1
+          }
+        },
+        "data": [
+          {
+            "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type": "leave-requests",
+            "attributes": {
+              "startDate": "2023-10-30",
+              "endDate": "2023-10-30",
+              "workDays": 3,
+              "leaveType": "OTHER",
+              "leaveTypeDetails": "O vacanță oarecare",
+              "status": "AWAITING_SUBSTITUTE",
+              "rejectReason": null,
+              "createdAt": "2023-10-30T10:23:41.529Z",
+              "modifiedAt": "2023-10-30T10:23:41.529Z"
+            },
+            "relationships": {
+              "initiator": {
+                "data": {
+                  "id": "<marca-charisma-example1>",
+                  "type": "employees"
+                }
+              },
+              "substitute": {
+                "data": {
+                  "id": "<marca-charisma-example2>",
+                  "type": "employees"
+                }
+              },
+              "supervisor": {
+                "data": {
+                  "id": "<marca-charisma-example3>",
+                  "type": "employees"
+                }
+              },
+              "HR": {
+                "data": {
+                  "id": "<marca-charisma-example4>",
+                  "type": "employees"
+                }
+              }
+            }
+          }
+        ],
+        "included": [
+          {
+            "id": "<marca-charisma-example1>",
+            "type": "employees",
+            "attributes": {
+              "name": "Ion Luca",
+              "surname": "Caragiale",
+              "role": "Specialist Resurse Umane",
+              "email": "user@example.com"
+            }
+          }
+        ]
+      }
+    BadRequestErrorResponseExample:
+      value: {
+        "errors": [
+          {
+            "code": "VALIDATION_ERROR",
+            "title": "The request was not valid",
+            "detail": "CNP must have exactly 13 characters",
+            "source": {
+              "pointer": "/data/attributes/cnp"
+            }
+          },
+          {
+            "code": "VALIDATION_ERROR",
+            "title": "Invalid parameter",
+            "detail": "id must be provided",
+            "source": {
+              "parameter": "id"
+            }
+          }
+        ],
+        "meta": {
+          "status": "400",
+          "timestamp": "2021-01-20T12:44:36.389413Z",
+          "correlationId": "fc52fdb98b0072bda24c5b71a5c122fe"
+        }
+      }
+    CreatedEmployeeResponseExample:
+      value: {
+        "data": {
+          "id": "<marca-charisma>",
+          "type": "employees"
+        }
+      }
+    CreatedLeaveRequestResponseExample:
+      value: {
+        "data": {
+          "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "type": "leave-requests"
+        }
+      }
+    CreateEmployeeLoginInfoRequestBodyExample:
+      value: {
+        "data": {
+          "type": "employees",
+          "attributes": {
+            "cnp": "1000000000000",
+            "email": "test@example.com",
+            "password": "12345678",
+            "confirmPassword": "12345678"
+          }
+        }
+      }
+    CreateLeaveRequestRequestBodyExample:
+      value: {
+        "data": {
+          "type": "leave-requests",
+          "attributes": {
+            "startDate": "2023-10-30",
+            "endDate": "2023-10-30",
+            "workDays": 0,
+            "leaveType": "VACATION",
+            "leaveTypeDetails": null
+          },
+          "relationships": {
+            "substitute": {
+              "data": {
+                "email": "user@example.com",
+                "type": "employees"
+              }
+            }
+          }
+        }
+      }
+    InternalServerErrorResponseExample:
+      value: {
+        "errors": [
+          {
+            "code": "INTERNAL_SERVER_ERROR",
+            "title": "Internal Server Error"
+          }
+        ],
+        "meta": {
+          "status": "500",
+          "timestamp": "2023-01-01T12:00:00.000000Z",
+          "correlationId": "fc52fdb98b0072bda24c5b71a5c122fe"
+        }
+      }
+    EmployeePersonalInfoResponseExample:
+      value: {
+        "data": {
+          "id": "@me",
+          "type": "employees",
+          "attributes": {
+            "vacationDaysTotal": 21,
+            "vacationDaysLeft": 18,
+            "name": "Henri-Marie",
+            "surname": "Coandă",
+            "role": "Redactor"
+          },
+          "relationships": {
+            "supervisor": {
+              "data": {
+                "id": "<marca-charisma>",
+                "type": "employees"
+              }
+            }
+          }
+        },
+        "included": [
+          {
+            "id": "<marca-charisma>",
+            "type": "employees",
+            "attributes": {
+              "name": "Titu-Liviu",
+              "surname": "Maiorescu",
+              "email": "test@example.com"
+            }
+          }
+        ]
+      }
+    ForbiddenErrorResponseExample: 
+      value: {
+        "errors": [
+          {
+            "code": "FORBIDDEN_ERROR",
+            "title": "Forbidden Error"
+          }
+        ],
+        "meta": {
+          "status": "403",
+          "timestamp": "2023-01-01T12:00:00.000000Z",
+          "correlationId": "fc52fdb98b0072bda24c5b71a5c122fe"
+        }
+      }
+    ForgotPasswordEmployeeRequestBodyExample:
+      value: {
+        "data": {
+          "type": "employees",
+          "attributes": {
+            "email": "user@example.com"
+          }
+        }
+      }
+    LoggedinEmployeeResponseExample:
+      value: {
+        "data": {
+          "type": "tokens",
+          "attributes": {
+            "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNjE5NTc3OTAyfQ.S5C4U0tR9GDXGCQTqQAUZQtHmJdgf6_WJkSgq7Knm4s",
+            "tokenType": "Bearer",
+            "expiresIn": 3600
+          }
+        },
+        "meta": {
+          "timestamp": "2023-10-24T12:34:56Z"
+        }
+      }
+    LoginEmployeeRequestBodyExample:
+      value: {
+        "data": {
+          "type": "employees",
+          "attributes": {
+            "email": "test@example.com",
+            "password": "12345678"
+          }
+        }
+      }
+    NotFoundErrorResponseExample: 
+      value: {
+        "errors": [
+          {
+            "code": "NOT_FOUND_ERROR",
+            "title": "Not Found Error",
+            "source": {
+              "pointer": "/employeeId"
+            }
+          }
+        ],
+        "meta": {
+          "status": "404",
+          "timestamp": "2023-01-01T12:00:00.000000Z",
+          "correlationId": "fc52fdb98b0072bda24c5b71a5c122fe"
+        }
+      }
+    PersonalLeaveRequestsResponseExample:
+      value: {
+        "meta": {
+          "page": {
+            "number": 0,
+            "size": 1,
+            "totalPages": 1,
+            "totalElements": 1
+          }
+        },
+        "data": [
+          {
+            "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type": "leave-requests",
+            "attributes": {
+              "startDate": "2023-10-30",
+              "endDate": "2023-10-30",
+              "workDays": 3,
+              "leaveType": "OTHER",
+              "leaveTypeDetails": "O vacanță oarecare",
+              "status": "AWAITING_SUBSTITUTE",
+              "createdAt": "2023-10-30T10:23:41.529Z",
+              "modifiedAt": "2023-10-30T10:23:41.529Z"
+            }
+          }
+        ]
+      }
+    ResetPasswordEmployeeRequestBodyExample:
+      value: {
+        "data": {
+          "type": "employees",
+          "attributes": {
+            "password": "12345678",
+            "confirmPassword": "12345678"
+          }
+        }
+      }
+    SubordinatesResponseExample:
+      value: {
+        "data": [
+          {
+            "id": "<marca-charisma>",
+            "type": "employees",
+            "attributes": {
+              "name": "Henri-Marie",
+              "surname": "Coandă",
+              "role": "Redactor",
+              "currentEmployee": true
+            },
+            "relationships": {
+              "recentLeaveRequests": {
+                "data": [
+                  {
+                    "id": "f8ae36fd-ada6-42ee-bf7c-f7e7bf3b6c2f",
+                    "type": "leave-requests"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "included": [
+          {
+            "id": "f8ae36fd-ada6-42ee-bf7c-f7e7bf3b6c2f",
+            "type": "leave-requests",
+            "attributes": {
+              "startDate": "2023-10-30",
+              "endDate": "2023-10-30",
+              "leaveType": "VACATION",
+              "status": "AWAITING_SUBSTITUTE"
+            }
+          }
+        ]
+      }
+    UnauthorizedErrorResponseExample: 
+      value: {
+        "errors": [
+          {
+            "code": "UNAUTHORIZED_ERROR",
+            "title": "Unauthorized Error"
+          }
+        ],
+        "meta": {
+          "status": "401",
+          "timestamp": "2023-01-01T12:00:00.000000Z",
+          "correlationId": "fc52fdb98b0072bda24c5b71a5c122fe"
+        }
+      }
+    UpdateLeaveRequestRequestBodyExample:
+      value: {
+        "data": {
+          "type": "leave-requests",
+          "attributes": {
+            "workDays": 0,
+            "leaveType": "NO_PAY",
+          }
+        }
+      }
+    UploadedLeaveRequestSignatureFileResponseExample:
+      value: {
+        "data": {
+          "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "type": "signature-file",
+          "relationships": {
+            "leaveRequest": {
+              "data": {
+                "id": "4e1b153e-e30e-4c8a-8f94-850e135a995a",
+                "type": "leave-requests"
+              }
+            }
+          }
+        },
+        "included": [
+          {
+            "id": "4e1b153e-e30e-4c8a-8f94-850e135a995a",
+            "type": "leave-requests",
+            "attributes": {
+              "status": "AWAITING_SUBSTITUTE"
+            }
+          }
+        ]
+      }
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
