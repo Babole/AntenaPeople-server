@@ -1,20 +1,18 @@
 import * as dotenv from "dotenv";
 dotenv.config();
+import { checkRequiredEnvVariables } from "./utils/envConfig";
+checkRequiredEnvVariables();
 
+import envConfig from "./utils/envConfig";
 import createServer from "./utils/server";
-
 import logger from "./utils/logger";
 
-if (!process.env.PORT) {
-  process.exit(1);
-}
-
-const port: number = parseInt(process.env.PORT);
+const port: number = parseInt(envConfig.PORT);
 
 const app = createServer();
 
 app.listen(port, () => {
   logger.info(
-    `Express now departing from port ${port}! ---${process.env.NODE_ENV} environment`
+    `Express now departing from port ${port}! ---${envConfig.NODE_ENV} environment`
   );
 });

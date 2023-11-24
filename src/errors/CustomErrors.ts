@@ -58,6 +58,18 @@ export class PrismaError extends BaseError {
 }
 
 /**
+ * Mailer Error Thrown when an Unexpected NodeMailer Error Occurs
+ */
+export class MailerError extends BaseError {
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+
+  readonly detail = "Mailer Service Issues";
+}
+
+/**
  * Error thrown when a Entry Already Exists (Registration Endpoint)
  */
 export class EntryAlreadyExistsError extends BaseError {
@@ -121,12 +133,14 @@ export class ExpiredTokenError extends BaseError {
  * Error thrown when there is a Validation Issue (Excludes Schema Validation)
  */
 export class ValidationError extends BaseError {
+  readonly source?: ErrorSource;
   readonly detail: string;
-  constructor(message: string, detail: string) {
+  constructor(message: string, detail: string, source?: ErrorSource) {
     super(message);
     this.name = this.constructor.name;
 
     this.detail = detail;
+    this.source = source;
   }
   readonly code = "VALIDATION_ERROR";
   readonly title = "Validation Error";

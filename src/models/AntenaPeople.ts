@@ -113,18 +113,13 @@ export interface CreateEmployeeLoginInfo {
        * @pattern ^\d{13}$
        */
       cnp: string;
-      /**
-       * @format email
-       * @pattern ^[^@]+@(antenagroup\.ro|intactmediagroup\.ro|antena3\.ro)$
-       */
+      /** @format employee-email */
       email: string;
       /**
        * @format password
        * @minLength 8
        */
       password: string;
-      /** @format password */
-      confirmPassword: string;
     };
   };
 }
@@ -346,8 +341,6 @@ export interface ResetPasswordEmployee {
        * @minLength 8
        */
       password: string;
-      /** @format password */
-      confirmPassword: string;
     };
   };
 }

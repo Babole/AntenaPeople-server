@@ -1,10 +1,9 @@
 import express, { Express } from "express";
 import cors from "cors";
 
-import {
-  validatorMiddleware,
-  errorHandler,
-} from "../validator/openApiValidator";
+import validatorMiddleware from "../middleware/validator";
+import { errorHandler } from "../middleware/errorHandler";
+import { authenticationRouter } from "../routes/authentication.router";
 
 function createServer() {
   const app: Express = express();
@@ -20,6 +19,8 @@ function createServer() {
   app.get("/", (req, res) => res.send("Welcome to AntenaPeople Admin API"));
 
   app.use(validatorMiddleware);
+
+  app.use("/", authenticationRouter);
 
   app.use(errorHandler);
 

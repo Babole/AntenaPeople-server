@@ -707,7 +707,6 @@ components:
                 - cnp
                 - email
                 - password
-                - confirmPassword
               properties:
                 cnp:
                   type: string
@@ -716,15 +715,12 @@ components:
                   pattern: '^\d{13}$'
                 email:
                   type: string
-                  format: email
-                  pattern: '^[^@]+@(antenagroup\.ro|intactmediagroup\.ro|antena3\.ro)$'
+                  format: employee-email
+                  # pattern: '^[^@]+@(antenagroup\.ro|intactmediagroup\.ro|antena3\.ro)$'
                 password:
                   type: string
                   format: password
                   minLength: 8
-                confirmPassword:
-                  type: string
-                  format: password
     EmployeeIncluded:
       title: EmployeeIncluded
       type: object
@@ -1117,15 +1113,11 @@ components:
               type: object
               required:
                 - password
-                - confirmPassword
               properties:
                 password:
                   type: string
                   format: password
                   minLength: 8
-                confirmPassword:
-                  type: string
-                  format: password
     LeaveRequestStatusEnum:
       title: LeaveRequestStatusEnum
       type: string
@@ -1432,8 +1424,7 @@ components:
           "attributes": {
             "cnp": "1000000000000",
             "email": "test@example.com",
-            "password": "12345678",
-            "confirmPassword": "12345678"
+            "password": "12345678"
           }
         }
       }
@@ -1601,8 +1592,7 @@ components:
         "data": {
           "type": "employees",
           "attributes": {
-            "password": "12345678",
-            "confirmPassword": "12345678"
+            "password": "12345678"
           }
         }
       }

@@ -20,5 +20,6 @@ module.exports = {
     "@typescript-eslint/no-explicit-any": "off",
     indent: "off",
     "@typescript-eslint/indent": "off",
+    "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
   },
 };
