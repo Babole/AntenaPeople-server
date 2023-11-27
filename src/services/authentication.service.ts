@@ -14,6 +14,7 @@ import {
 } from "../errors/CustomErrors";
 import envConfig from "../utils/envConfig";
 import log from "../utils/logger";
+import { Token, TokenTypeEnum } from "../models/AuthToken";
 
 // DB Interactions
 
@@ -64,6 +65,51 @@ export const registerEmployee = async (
   }
 };
 
+/**
+ * Confirm Emplpoyee Email Function only if email not verified and is a current employee
+ * @param employeeId Employee's unique id from Charisma
+ */
+export const emailConfirmation = async (
+  employeeId: string
+): Promise<dbModels.PrismaEmployeeGetPayloadId> => {
+  try {
+    // Check if employee exists
+    const existingEmployee = await db.employee.findUnique({
+      where: { id: employeeId },
+    });
+
+    // Handle case where employee is not found or is no longer an employee
+    if (!existingEmployee || !existingEmployee.currentEmployee) {
+      throw new NotFoundError(`Employee with ID ${employeeId} not found.`, {
+        parameter: "token",
+      });
+    }
+
+    // Handle case where email is already verified
+    if (existingEmployee.emailVerified) {
+      throw new EntryAlreadyExistsError(
+        `Employee with ID ${employeeId} has already verified their email.`
+      );
+    }
+
+    const updatedEmployee = await db.employee.update({
+      where: {
+        id: employeeId,
+        currentEmployee: true,
+        emailVerified: false,
+      },
+      data: { emailVerified: true },
+      select: dbModels.idEmployeeSelectPayload,
+    });
+
+    return updatedEmployee;
+  } catch (err: any) {
+    if (err instanceof BaseError) throw err;
+
+    throw new PrismaError(err.message);
+  }
+};
+
 // Emailing
 
 /**
@@ -77,7 +123,10 @@ export async function registeredEmployeeMailer(
 ): Promise<void> {
   try {
     // Create token-link for email confirmation
-    const payload = { id: employeeId };
+    const payload: Token = {
+      employeeId: employeeId,
+      type: TokenTypeEnum.EMAIL_VALIDATION,
+    };
     const token = jwt.sign(payload, envConfig.JWT_SECRET, {
       expiresIn: 900,
     });

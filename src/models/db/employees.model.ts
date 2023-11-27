@@ -10,3 +10,11 @@ export const RegisteredEmployeeSelectPayload = {
 export type PrismaEmployeeGetPayloadRegistered = Prisma.EmployeeGetPayload<{
   select: typeof RegisteredEmployeeSelectPayload;
 }>;
+
+export const idEmployeeSelectPayload = {
+  id: true,
+};
+
+export type PrismaEmployeeGetPayloadId = Prisma.EmployeeGetPayload<{
+  select: typeof idEmployeeSelectPayload;
+}>;

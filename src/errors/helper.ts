@@ -1,4 +1,4 @@
-const { DateTime } = require("luxon"); // eslint-disable-line
+import { DateTime } from "luxon";
 
 import * as apiModels from "../models/AntenaPeople";
 import { BaseError } from "./BaseError";

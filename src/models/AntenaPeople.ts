@@ -626,7 +626,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @request POST:/employees/email-status/{token}
      */
     employeeVerifyEmail: (token: string, params: RequestParams = {}) =>
-      this.request<CreatedEmployee, Errors>({
+      this.request<LoggedinEmployee, Errors>({
         path: `/employees/email-status/${token}`,
         method: "POST",
         ...params,

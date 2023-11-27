@@ -1,5 +1,5 @@
 import pino from "pino";
-const { DateTime } = require("luxon"); // eslint-disable-line
+import { DateTime } from "luxon";
 
 const loggerOptions: pino.LoggerOptions = {
   timestamp: () =>
