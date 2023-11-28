@@ -31,3 +31,7 @@ export const forgotPasswordPrismaEmployeeSelect = {
 export type forgotPasswordPrismaEmployeeGetPayload = Prisma.EmployeeGetPayload<{
   select: typeof forgotPasswordPrismaEmployeeSelect;
 }>;
+
+export type resetPasswordPrismaEmployeeUpdateInput = {
+  password: string;
+};

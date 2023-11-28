@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import * as AuthenticationController from "../controllers/authentication.controller";
 import * as auth from "../middleware/auth";
+import { TokenTypeEnum } from "../models/AuthToken";
 
 export const authenticationRouter: Router = Router();
 
@@ -11,8 +12,8 @@ authenticationRouter.post(
 );
 
 authenticationRouter.post(
-  "/employees/email-status/:token",
-  auth.verifyEmailConfirmationToken,
+  "/employees/email-status",
+  auth.verifyToken(TokenTypeEnum.EMAIL_VALIDATION),
   AuthenticationController.emailConfirmationHandler
 );
 
@@ -23,5 +24,11 @@ authenticationRouter.post(
 
 authenticationRouter.post(
   "/employees/forgot-password",
-  AuthenticationController.loginEmployeeHandler
+  AuthenticationController.forgotPasswordHandler
+);
+
+authenticationRouter.post(
+  "/employees/reset-password",
+  auth.verifyToken(TokenTypeEnum.PASSWORD_RESET),
+  AuthenticationController.resetPasswordHandler
 );

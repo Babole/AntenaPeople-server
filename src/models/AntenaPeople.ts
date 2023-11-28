@@ -623,12 +623,14 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @tags Authentication
      * @name EmployeeVerifyEmail
      * @summary Sets the employee's email status
-     * @request POST:/employees/email-status/{token}
+     * @request POST:/employees/email-status
+     * @secure
      */
-    employeeVerifyEmail: (token: string, params: RequestParams = {}) =>
+    employeeVerifyEmail: (params: RequestParams = {}) =>
       this.request<LoggedinEmployee, Errors>({
-        path: `/employees/email-status/${token}`,
+        path: `/employees/email-status`,
         method: "POST",
+        secure: true,
         ...params,
       }),
 

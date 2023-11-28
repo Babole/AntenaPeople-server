@@ -10,41 +10,43 @@ import {
 import envConfig from "../utils/envConfig";
 import { Token, TokenTypeEnum } from "../models/AuthToken";
 
-export function verifyEmailConfirmationToken(
-  req: Request<
-    {
-      token: string;
-    },
-    unknown,
-    unknown
-  >,
-  res: Response<unknown, { decodedToken: Token }>,
-  next: NextFunction
-): void {
-  try {
-    const { token } = req.params;
+export const verifyToken = (permissions: TokenTypeEnum) => {
+  return (
+    req: Request,
+    res: Response<unknown, { decodedToken: Token }>,
+    next: NextFunction
+  ): void => {
+    try {
+      const header = req.headers.authorization;
 
-    if (!token) {
-      throw new MissingTokenError("Missing email confirmation token");
+      if (!header) {
+        throw new MissingTokenError("Missing authorization token");
+      }
+
+      const token = header.split(" ")[1];
+
+      if (!token) {
+        throw new MissingTokenError("Missing authorization token");
+      }
+
+      const decoded = jwt.verify(token, envConfig.JWT_SECRET) as Token;
+
+      if (decoded && decoded.employeeId && decoded.type) {
+        if (decoded.type !== permissions)
+          throw new ForbiddenError(`Missing permissions for ${permissions}`);
+
+        res.locals.decodedToken = decoded;
+        return next();
+      }
+
+      throw Error("Unexpected authorization error");
+    } catch (err: any) {
+      if (err instanceof jwt.TokenExpiredError) {
+        err = new ExpiredTokenError(err.message);
+      } else if (err instanceof jwt.JsonWebTokenError) {
+        err = new InvalidTokenError(err.message);
+      }
+      return next(err);
     }
-
-    const decoded = jwt.verify(token, envConfig.JWT_SECRET) as Token;
-
-    if (decoded && decoded.employeeId && decoded.type) {
-      if (decoded.type !== TokenTypeEnum.EMAIL_VALIDATION)
-        throw new ForbiddenError("No email validation permissions");
-
-      res.locals.decodedToken = decoded;
-      return next();
-    }
-
-    throw Error("Unexpected authorization error");
-  } catch (err) {
-    if (err instanceof jwt.TokenExpiredError) {
-      err = new ExpiredTokenError(err.message);
-    } else if (err instanceof jwt.JsonWebTokenError) {
-      err = new InvalidTokenError(err.message);
-    }
-    return next(err);
-  }
-}
+  };
+};

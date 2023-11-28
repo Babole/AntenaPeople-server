@@ -208,6 +208,48 @@ export const forgotPassword = async (
   }
 };
 
+/**
+ * Reset Password Function - only if is current employee
+ * @param newPasswordDBInput New Employee password
+ * @param employeeId Employee's unique id from Charisma
+ */
+export const resetPassword = async (
+  newPasswordDBInput: dbModels.resetPasswordPrismaEmployeeUpdateInput,
+  employeeId: string
+): Promise<void> => {
+  try {
+    // Check if employee exists
+    const existingEmployee = await db.employee.findUnique({
+      where: { id: employeeId },
+    });
+
+    // Handle case where employee is not found or is no longer an employee
+    if (!existingEmployee || !existingEmployee.currentEmployee) {
+      throw new NotFoundError(`Employee with ID ${employeeId} not found.`);
+    }
+
+    // Transform incoming data
+    const transformedNewPasswordDBInput = {
+      password: await transformations.hashWithBcrypt(
+        newPasswordDBInput.password
+      ),
+    };
+
+    // Update employee with new password
+    await db.employee.update({
+      where: {
+        id: employeeId,
+        currentEmployee: true,
+      },
+      data: transformedNewPasswordDBInput,
+    });
+  } catch (err: any) {
+    if (err instanceof BaseError) throw err;
+
+    throw new PrismaError(err.message);
+  }
+};
+
 // Emailing
 
 /**
@@ -273,10 +315,11 @@ export async function forgotPasswordMailer(
   employeeId: string
 ): Promise<void> {
   try {
+    console.log("hello");
     // Create token-link for email confirmation
     const payload: Token = {
       employeeId: employeeId,
-      type: TokenTypeEnum.EMAIL_VALIDATION,
+      type: TokenTypeEnum.PASSWORD_RESET,
     };
     const token = jwt.sign(payload, envConfig.JWT_SECRET, {
       expiresIn: 900,

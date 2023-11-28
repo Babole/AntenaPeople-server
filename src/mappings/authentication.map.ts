@@ -11,7 +11,7 @@ import envConfig from "../utils/envConfig";
  * @param employeeLoginInfoReqBody The Employee Registration Request Body
  * @returns The Mapped DTO
  */
-export function mapApiModelsCreateEmployeeLoginInfoToDBModelsPrismaEmployeeUpdateInput(
+export function mapApiModelsCreateEmployeeLoginInfoToDBModelsRegisterPrismaEmployeeUpdateInput(
   employeeLoginInfoReqBody: apiModels.CreateEmployeeLoginInfo
 ): dbModels.registerPrismaEmployeeUpdateInput {
   const { attributes } = employeeLoginInfoReqBody.data;
@@ -26,7 +26,7 @@ export function mapApiModelsCreateEmployeeLoginInfoToDBModelsPrismaEmployeeUpdat
  * @param createEmployeeQueryResult The Query Result Object
  * @returns The Mapped DTO
  */
-export function mapDBModelsPrismaEmployeeGetPayloadRegisteredToApiModelsCreatedEmployee(
+export function mapDBModelsRegisterPrismaEmployeeGetPayloadToApiModelsCreatedEmployee(
   createEmployeeQueryResult: dbModels.registerPrismaEmployeeGetPayload
 ): apiModels.CreatedEmployee {
   return {
@@ -42,7 +42,7 @@ export function mapDBModelsPrismaEmployeeGetPayloadRegisteredToApiModelsCreatedE
  * @param employeeIDQueryResult The Query Result Object
  * @returns The Mapped DTO
  */
-export function mapDBModelsPrismaEmployeeGetPayloadIdToApiModelsLoggedinEmployee(
+export function mapDBModelsIDPrismaEmployeeGetPayloadToApiModelsLoggedinEmployee(
   employeeIDQueryResult: dbModels.IDPrismaEmployeeGetPayload
 ): apiModels.LoggedinEmployee {
   const payload: Token = {
@@ -64,5 +64,19 @@ export function mapDBModelsPrismaEmployeeGetPayloadIdToApiModelsLoggedinEmployee
     meta: {
       timestamp: DateTime.utc().toISO()!,
     },
+  };
+}
+
+/**
+ * Utility Function that Maps the Reset Password request object to the db query input
+ * @param newPasswordReqBody The New Password Request Body
+ * @returns The Mapped DTO
+ */
+export function mapApiResetPasswordEmployeeToDBModelsResetPasswordPrismaEmployeeUpdateInput(
+  employeeLoginInfoReqBody: apiModels.ResetPasswordEmployee
+): dbModels.resetPasswordPrismaEmployeeUpdateInput {
+  const { attributes } = employeeLoginInfoReqBody.data;
+  return {
+    password: attributes?.password,
   };
 }

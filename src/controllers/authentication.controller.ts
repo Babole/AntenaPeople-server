@@ -16,7 +16,7 @@ export async function registerEmployeeHandler(
 ): Promise<Response | void> {
   try {
     const employeeLoginCredentialsDBInput =
-      authenticationMappings.mapApiModelsCreateEmployeeLoginInfoToDBModelsPrismaEmployeeUpdateInput(
+      authenticationMappings.mapApiModelsCreateEmployeeLoginInfoToDBModelsRegisterPrismaEmployeeUpdateInput(
         req.body
       );
 
@@ -33,7 +33,7 @@ export async function registerEmployeeHandler(
     );
 
     const ApiRes =
-      authenticationMappings.mapDBModelsPrismaEmployeeGetPayloadRegisteredToApiModelsCreatedEmployee(
+      authenticationMappings.mapDBModelsRegisterPrismaEmployeeGetPayloadToApiModelsCreatedEmployee(
         DBOut
       );
 
@@ -47,13 +47,7 @@ export async function registerEmployeeHandler(
 }
 
 export async function emailConfirmationHandler(
-  req: Request<
-    {
-      token: string;
-    },
-    apiModels.LoggedinEmployee,
-    null
-  >,
+  req: Request<Record<string, never>, apiModels.LoggedinEmployee, null>,
   res: Response<apiModels.LoggedinEmployee, { decodedToken: Token }>,
   next: NextFunction
 ): Promise<Response | void> {
@@ -63,7 +57,7 @@ export async function emailConfirmationHandler(
     const DBOut = await AuthenticationService.emailConfirmation(employeeId);
 
     const ApiRes =
-      authenticationMappings.mapDBModelsPrismaEmployeeGetPayloadIdToApiModelsLoggedinEmployee(
+      authenticationMappings.mapDBModelsIDPrismaEmployeeGetPayloadToApiModelsLoggedinEmployee(
         DBOut
       );
 
@@ -88,12 +82,10 @@ export async function loginEmployeeHandler(
   try {
     const { email, password } = req.body.data.attributes;
 
-    console.log(email, password);
-
     const DBOut = await AuthenticationService.loginEmployee(email, password);
 
     const ApiRes =
-      authenticationMappings.mapDBModelsPrismaEmployeeGetPayloadIdToApiModelsLoggedinEmployee(
+      authenticationMappings.mapDBModelsIDPrismaEmployeeGetPayloadToApiModelsLoggedinEmployee(
         DBOut
       );
 
@@ -128,7 +120,28 @@ export async function forgotPasswordHandler(
       );
     }
 
-    return res.status(204);
+    return res.status(204).send();
+  } catch (err: any) {
+    return next(err);
+  }
+}
+
+export async function resetPasswordHandler(
+  req: Request<Record<string, never>, null, apiModels.ResetPasswordEmployee>,
+  res: Response<null, { decodedToken: Token }>,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { employeeId } = res.locals.decodedToken;
+
+    const newPasswordDBInput =
+      authenticationMappings.mapApiResetPasswordEmployeeToDBModelsResetPasswordPrismaEmployeeUpdateInput(
+        req.body
+      );
+
+    await AuthenticationService.resetPassword(newPasswordDBInput, employeeId);
+
+    return res.status(204).send();
   } catch (err: any) {
     return next(err);
   }
