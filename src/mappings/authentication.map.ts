@@ -13,14 +13,12 @@ import envConfig from "../utils/envConfig";
  */
 export function mapApiModelsCreateEmployeeLoginInfoToDBModelsPrismaEmployeeUpdateInput(
   employeeLoginInfoReqBody: apiModels.CreateEmployeeLoginInfo
-): dbModels.PrismaEmployeeUpdateInput {
+): dbModels.registerPrismaEmployeeUpdateInput {
   const { attributes } = employeeLoginInfoReqBody.data;
-  const dbInput: dbModels.PrismaEmployeeUpdateInput = {
+  return {
     email: attributes?.email,
     password: attributes?.password,
   };
-
-  return dbInput;
 }
 
 /**
@@ -29,7 +27,7 @@ export function mapApiModelsCreateEmployeeLoginInfoToDBModelsPrismaEmployeeUpdat
  * @returns The Mapped DTO
  */
 export function mapDBModelsPrismaEmployeeGetPayloadRegisteredToApiModelsCreatedEmployee(
-  createEmployeeQueryResult: dbModels.PrismaEmployeeGetPayloadRegistered
+  createEmployeeQueryResult: dbModels.registerPrismaEmployeeGetPayload
 ): apiModels.CreatedEmployee {
   return {
     data: {
@@ -45,7 +43,7 @@ export function mapDBModelsPrismaEmployeeGetPayloadRegisteredToApiModelsCreatedE
  * @returns The Mapped DTO
  */
 export function mapDBModelsPrismaEmployeeGetPayloadIdToApiModelsLoggedinEmployee(
-  employeeIDQueryResult: dbModels.PrismaEmployeeGetPayloadId
+  employeeIDQueryResult: dbModels.IDPrismaEmployeeGetPayload
 ): apiModels.LoggedinEmployee {
   const payload: Token = {
     employeeId: employeeIDQueryResult.id,

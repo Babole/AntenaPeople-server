@@ -3,6 +3,7 @@ import { BaseError } from "../errors/BaseError";
 import path from "path";
 import fs from "fs";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 
 import * as dbModels from "../models/db/employees.model";
 import { transporter } from "../utils/emailTransporter";
@@ -11,26 +12,37 @@ import {
   EntryAlreadyExistsError,
   NotFoundError,
   MailerError,
+  UnverifiedEmailError,
+  InvalidCredentialsError,
 } from "../errors/CustomErrors";
 import envConfig from "../utils/envConfig";
 import log from "../utils/logger";
 import { Token, TokenTypeEnum } from "../models/AuthToken";
+import * as transformations from "../utils/transformations";
 
 // DB Interactions
 
 /**
- * Register Emplpoyee Function only if email not verified and is a current employee
- * @param employeeDBInput The Employee Data to Update
+ * Register Emplpoyee Function - only if email not verified and is a current employee
+ * @param employeeLoginCredentialsDBInput The Employee's Login Credentials to add
  * @param employeeCNP Employee's CNP(encrypted)
  */
 export const registerEmployee = async (
-  employeeDBInput: dbModels.PrismaEmployeeUpdateInput,
+  employeeDBInput: dbModels.registerPrismaEmployeeUpdateInput,
   employeeCNP: string
-): Promise<dbModels.PrismaEmployeeGetPayloadRegistered> => {
+): Promise<dbModels.registerPrismaEmployeeGetPayload> => {
   try {
+    // Transform incoming data
+    const transformedEmployeeDBInput = {
+      email: employeeDBInput.email.toLowerCase(),
+      password: await transformations.hashWithBcrypt(employeeDBInput.password),
+    };
+
+    const transformedEmployeeCNP = transformations.hashWithSHA256(employeeCNP);
+
     // Check if employee exists
     const existingEmployee = await db.employee.findUnique({
-      where: { cnp: employeeCNP },
+      where: { cnp: transformedEmployeeCNP },
     });
 
     // Handle case where employee is not found or is no longer an employee
@@ -40,7 +52,7 @@ export const registerEmployee = async (
       });
     }
 
-    // Handle case where email is already verified
+    // Handle case where email IS verified
     if (existingEmployee.emailVerified) {
       throw new EntryAlreadyExistsError(
         `Employee with CNP ${employeeCNP} has already verified email account.`
@@ -49,12 +61,12 @@ export const registerEmployee = async (
 
     const updatedEmployee = await db.employee.update({
       where: {
-        cnp: employeeCNP,
+        cnp: transformedEmployeeCNP,
         currentEmployee: true,
         emailVerified: false,
       },
-      data: employeeDBInput,
-      select: dbModels.RegisteredEmployeeSelectPayload,
+      data: transformedEmployeeDBInput,
+      select: dbModels.registerPrismaEmployeeSelect,
     });
 
     return updatedEmployee;
@@ -66,12 +78,12 @@ export const registerEmployee = async (
 };
 
 /**
- * Confirm Emplpoyee Email Function only if email not verified and is a current employee
+ * Confirm Emplpoyee Email Function - only if email not verified and is a current employee
  * @param employeeId Employee's unique id from Charisma
  */
 export const emailConfirmation = async (
   employeeId: string
-): Promise<dbModels.PrismaEmployeeGetPayloadId> => {
+): Promise<dbModels.IDPrismaEmployeeGetPayload> => {
   try {
     // Check if employee exists
     const existingEmployee = await db.employee.findUnique({
@@ -80,12 +92,10 @@ export const emailConfirmation = async (
 
     // Handle case where employee is not found or is no longer an employee
     if (!existingEmployee || !existingEmployee.currentEmployee) {
-      throw new NotFoundError(`Employee with ID ${employeeId} not found.`, {
-        parameter: "token",
-      });
+      throw new NotFoundError(`Employee with ID ${employeeId} not found.`);
     }
 
-    // Handle case where email is already verified
+    // Handle case where email IS verified
     if (existingEmployee.emailVerified) {
       throw new EntryAlreadyExistsError(
         `Employee with ID ${employeeId} has already verified their email.`
@@ -99,10 +109,98 @@ export const emailConfirmation = async (
         emailVerified: false,
       },
       data: { emailVerified: true },
-      select: dbModels.idEmployeeSelectPayload,
+      select: dbModels.IDPrismaEmployeeSelect,
     });
 
     return updatedEmployee;
+  } catch (err: any) {
+    if (err instanceof BaseError) throw err;
+
+    throw new PrismaError(err.message);
+  }
+};
+
+/**
+ * Login Employee Function - only if email verified and is a current employee
+ * @param loginEmail Email provided on login
+ * @param loginPassword Password provided on login
+ */
+export const loginEmployee = async (
+  loginEmail: string,
+  loginPassword: string
+): Promise<dbModels.IDPrismaEmployeeGetPayload> => {
+  try {
+    // Transform incoming data
+    const transformedLoginEmail = loginEmail.toLowerCase();
+
+    // Find employee
+    const loggedinEmployee = await db.employee.findUnique({
+      where: {
+        email: transformedLoginEmail,
+      },
+      select: {
+        ...dbModels.IDPrismaEmployeeSelect,
+        currentEmployee: true,
+        emailVerified: true,
+        password: true,
+      },
+    });
+
+    // Handle case where employee is not found Or is no longer an employee Or has no password set (last case unlikley)
+    if (
+      !loggedinEmployee ||
+      !loggedinEmployee.currentEmployee ||
+      !loggedinEmployee.password
+    ) {
+      throw new InvalidCredentialsError(`Invalid credentials on login.`);
+    }
+
+    // Verify password (password must be non null since )
+    const authed = await bcrypt.compare(
+      loginPassword,
+      loggedinEmployee.password
+    );
+    if (!authed) {
+      throw new InvalidCredentialsError(`Invalid credentials on login.`);
+    }
+
+    // Handle case where email IS NOT verified
+    if (!loggedinEmployee.emailVerified) {
+      throw new UnverifiedEmailError(
+        `Employee with ID ${loggedinEmployee.id} attempted a login without a verified email.`
+      );
+    }
+
+    return { id: loggedinEmployee.id };
+  } catch (err: any) {
+    if (err instanceof BaseError) throw err;
+
+    throw new PrismaError(err.message);
+  }
+};
+
+/**
+ * Forgot Password Function
+ * @param requestorEmail Email provided on forgot password request
+ */
+export const forgotPassword = async (
+  requestorEmail: string
+): Promise<dbModels.forgotPasswordPrismaEmployeeGetPayload | null> => {
+  try {
+    // Transform incoming data
+    const transformedRequestorEmail = requestorEmail.toLowerCase();
+
+    // Find employee
+    const existingEmployee = await db.employee.findUnique({
+      where: {
+        email: transformedRequestorEmail,
+      },
+      select: dbModels.forgotPasswordPrismaEmployeeSelect,
+    });
+
+    // no need to throw errors just check for requirments and send email if they are satisfied
+
+    return existingEmployee;
   } catch (err: any) {
     if (err instanceof BaseError) throw err;
 
@@ -130,7 +228,9 @@ export async function registeredEmployeeMailer(
     const token = jwt.sign(payload, envConfig.JWT_SECRET, {
       expiresIn: 900,
     });
-    const token_link = `${envConfig.SERVER_URL}/employees/email-status/${token}`;
+
+    // const token_link = `${envConfig.SERVER_URL}/employees/email-status/${token}`; -- update with frontend page
+    const token_link = token;
 
     // Read the HTML file
     const htmlFilePath = path.join(
@@ -153,6 +253,59 @@ export async function registeredEmployeeMailer(
       from: envConfig.EMAIL_USER || "",
       to: employeeEmail,
       subject: "Înregistrare - AntenaPeople",
+      html: htmlContent,
+    });
+
+    log.info("Message sent: %s", info.messageId);
+  } catch (err: any) {
+    console.log(err);
+    throw new MailerError(err.message);
+  }
+}
+
+/**
+ * Email Forgot Password Function
+ * @param requestorEmail Email provided on forgot password request
+ * @param employeeId ID of registered employee
+ */
+export async function forgotPasswordMailer(
+  requestorEmail: string,
+  employeeId: string
+): Promise<void> {
+  try {
+    // Create token-link for email confirmation
+    const payload: Token = {
+      employeeId: employeeId,
+      type: TokenTypeEnum.EMAIL_VALIDATION,
+    };
+    const token = jwt.sign(payload, envConfig.JWT_SECRET, {
+      expiresIn: 900,
+    });
+
+    // const token_link = `${envConfig.SERVER_URL}/employees/email-status/${token}`; -- update with frontend page
+    const token_link = token;
+
+    // Read the HTML file
+    const htmlFilePath = path.join(
+      __dirname,
+      "../emailTemplates/forgot-pass.html"
+    );
+    let htmlContent = fs.readFileSync(htmlFilePath, "utf-8");
+    htmlContent = htmlContent.replace(
+      /INSERT_SITE_URL_HERE/g,
+      envConfig.CLIENT_URL
+    );
+    htmlContent = htmlContent.replace(
+      /INSERT_LOGO_URL_HERE/g,
+      envConfig.LOGO_URL
+    );
+    htmlContent = htmlContent.replace(/INSERT_TOKEN_URL_HERE/g, token_link);
+
+    // send mail with defined transport object
+    const info = await transporter.sendMail({
+      from: envConfig.EMAIL_USER,
+      to: requestorEmail,
+      subject: "Recuperare parolă - AntenaPeople",
       html: htmlContent,
     });
 

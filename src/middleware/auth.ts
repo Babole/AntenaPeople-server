@@ -15,8 +15,8 @@ export function verifyEmailConfirmationToken(
     {
       token: string;
     },
-    Record<string, never>,
-    Record<string, never>
+    unknown,
+    unknown
   >,
   res: Response<unknown, { decodedToken: Token }>,
   next: NextFunction

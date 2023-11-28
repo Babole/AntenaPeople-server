@@ -146,3 +146,33 @@ export class ValidationError extends BaseError {
   readonly title = "Validation Error";
   readonly status = 400;
 }
+
+/**
+ * Error thrown on unverified email login attempt
+ */
+export class UnverifiedEmailError extends BaseError {
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+
+  readonly code = "UNAUTHORIZED";
+  readonly title = "Unauthorized";
+  readonly status = 401;
+  readonly detail = "Email not verified";
+}
+
+/**
+ * Error thrown on invalid credentials login attempt
+ */
+export class InvalidCredentialsError extends BaseError {
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+
+  readonly code = "UNAUTHORIZED";
+  readonly title = "Unauthorized";
+  readonly status = 401;
+  readonly detail = "Invalid Credentials Provided";
+}

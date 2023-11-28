@@ -1,20 +1,33 @@
 import { Prisma } from "@prisma/client";
 
-export type PrismaEmployeeUpdateInput = Prisma.EmployeeUpdateInput;
+export type registerPrismaEmployeeUpdateInput = {
+  email: string;
+  password: string;
+};
 
-export const RegisteredEmployeeSelectPayload = {
+export const registerPrismaEmployeeSelect = {
   id: true,
   email: true,
-};
+} satisfies Prisma.EmployeeSelect;
 
-export type PrismaEmployeeGetPayloadRegistered = Prisma.EmployeeGetPayload<{
-  select: typeof RegisteredEmployeeSelectPayload;
+export type registerPrismaEmployeeGetPayload = Prisma.EmployeeGetPayload<{
+  select: typeof registerPrismaEmployeeSelect;
 }>;
 
-export const idEmployeeSelectPayload = {
+export const IDPrismaEmployeeSelect = {
   id: true,
-};
+} satisfies Prisma.EmployeeSelect;
 
-export type PrismaEmployeeGetPayloadId = Prisma.EmployeeGetPayload<{
-  select: typeof idEmployeeSelectPayload;
+export type IDPrismaEmployeeGetPayload = Prisma.EmployeeGetPayload<{
+  select: typeof IDPrismaEmployeeSelect;
+}>;
+
+export const forgotPasswordPrismaEmployeeSelect = {
+  id: true,
+  currentEmployee: true,
+  emailVerified: true,
+} satisfies Prisma.EmployeeSelect;
+
+export type forgotPasswordPrismaEmployeeGetPayload = Prisma.EmployeeGetPayload<{
+  select: typeof forgotPasswordPrismaEmployeeSelect;
 }>;
