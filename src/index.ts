@@ -4,7 +4,7 @@ import { checkRequiredEnvVariables } from "./utils/envConfig";
 checkRequiredEnvVariables();
 
 import envConfig from "./utils/envConfig";
-import createServer from "./utils/server";
+import createServer from "./server";
 import logger from "./utils/logger";
 
 const port: number = parseInt(envConfig.PORT);

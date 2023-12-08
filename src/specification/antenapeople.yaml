@@ -135,7 +135,7 @@ paths:
       summary: Lists subordinates
       description: This can only be done by the logged in user.
       parameters:
-        - $ref: '#/components/parameters/EmploymentStatusQueryParameter'
+        - $ref: '#/components/parameters/FilterCurrentEmployeeQueryParameter'
       responses:
         200: 
           $ref: '#/components/responses/ListSubordinatesResponse'
@@ -249,24 +249,14 @@ paths:
         responses:
           201: 
             $ref: '#/components/responses/UploadedLeaveRequestSignatureFileResponse'
-        #   401: 
-        #     $ref: "#/components/responses/UnauthorizedErrorResponse"
-        #   400:
-        #     $ref: '#/components/responses/BadRequestErrorResponse'
-        #   404:
-        #     $ref: '#/components/responses/NotFoundErrorResponse'
-        #   500: 
-        #     $ref: '#/components/responses/InternalServerErrorResponse'
 components:
   parameters:
-    EmploymentStatusQueryParameter:
-      name: employmentStatus
+    FilterCurrentEmployeeQueryParameter:
+      name: filter[currentEmployee]
       in: query
       description: Employment status filter.
       schema:
-        allOf:
-          - $ref: '#/components/schemas/EmploymentStatusEnum'
-        default: 'CURRENT'
+        type: boolean
     LeaveRequestIdPathParameter:
       name: leaveRequestId
       in: path
@@ -293,12 +283,15 @@ components:
         minimum: 1
         maximum: 100
     StatusFilterQueryParameter:
-      name: statusFilter
+      name: filter[status]
       in: query
       description: Leave Request Approval Status
-      required: true
       schema:
-        $ref: '#/components/schemas/LeaveRequestStatusFilterEnum'
+        type: array
+        uniqueItems: true
+        minItems: 0
+        items:
+          $ref: '#/components/schemas/LeaveRequestStatusEnum'
   requestBodies:
     CreateEmployeeLoginInfoRequestBody:
       description: Create Employee Login Info Request Body
@@ -434,7 +427,7 @@ components:
       content:
         application/vnd.api+json:
           schema:
-            $ref: '#/components/schemas/PersonalLeaveRequestsSummary'
+            $ref: '#/components/schemas/PersonalLeaveRequests'
           examples:
             LeaveRequests:
               $ref: '#/components/examples/PersonalLeaveRequestsResponseExample'
@@ -494,80 +487,16 @@ components:
             - relationships
           properties:
             relationships:
-              type: object
-              required:
-                - initiator
-                - substitute
-                - supervisor
-                - HR
-              properties:
-                initiator:
-                  type: object
-                  required:
-                    - data
-                  properties:
-                    data:
-                      type: object
-                      required:
-                        - id
-                        - type
-                      properties:
-                        id:
-                          type: string
-                        type:
-                          $ref: '#/components/schemas/EmployeesTypeEnum'
-                substitute:
-                  type: object
-                  required:
-                    - data
-                  properties:
-                    data:
-                      type: object
-                      required:
-                        - id
-                        - type
-                      properties:
-                        id:
-                          type: string
-                        type:
-                          $ref: '#/components/schemas/EmployeesTypeEnum'
-                supervisor:
-                  type: object
-                  required:
-                    - data
-                  properties:
-                    data:
-                      type: object
-                      required:
-                        - id
-                        - type
-                      properties:
-                        id:
-                          type: string
-                        type:
-                          $ref: '#/components/schemas/EmployeesTypeEnum'
-                HR:
-                  type: object
-                  required:
-                    - data
-                  properties:
-                    data:
-                      type: object
-                      required:
-                        - id
-                        - type
-                      properties:
-                        id:
-                          type: string
-                        type:
-                          $ref: '#/components/schemas/EmployeesTypeEnum'
+              allOf:
+                - $ref: '#/components/schemas/RelationshipInitiator'
+                - $ref: '#/components/schemas/RelationshipSubstitute'
+                - $ref: '#/components/schemas/RelationshipSupervisor'
+                - $ref: '#/components/schemas/RelationshipHR'
     ApprovalLeaveRequests:
       title: ApprovalLeaveRequests
       type: object
       required:
-        - meta
         - data
-        - included
       properties:
         meta:
           type: object
@@ -618,14 +547,41 @@ components:
           properties:
             id: 
               type: string
-              format: uuid
             type: 
               $ref: '#/components/schemas/LeaveRequestsTypeEnum'
+            relationships:
+              $ref: '#/components/schemas/RelationshipInitiator'
+        included:
+          type: array
+          uniqueItems: true
+          minItems: 0
+          items: 
+            minItems: 1 
+            type: object
+            required:
+              - id
+              - type
+              - attributes
+            properties:
+              id:
+                type: string
+              type:
+                $ref: "#/components/schemas/EmployeesTypeEnum"
+              attributes:
+                type: object
+                required:
+                  - vacationDaysLeft
+                properties:
+                  vacationDaysLeft:
+                    type: integer
+                    format: int32
+                    minimum: 0
     CreateLeaveRequest:
       title: CreateLeaveRequest
       type: object
       required:
         - data
+        - included
       properties:
         data:
           type: object
@@ -653,6 +609,7 @@ components:
                 workDays:
                   type: integer
                   format: int32
+                  minimum: 0
                 leaveType:
                   $ref: '#/components/schemas/LeaveRequestLeaveTypeEnum'
                 leaveTypeDetails:
@@ -672,14 +629,38 @@ components:
                     data:
                       type: object
                       required:
-                        - email
+                        - lid
                         - type
                       properties:
-                        email:
+                        lid:
                           type: string
-                          format: email
+                          format: uuid
                         type:
                           $ref: '#/components/schemas/EmployeesTypeEnum'
+        included:
+          type: array
+          uniqueItems: true
+          minItems: 1
+          items: 
+            type: object
+            required:
+              - lid
+              - type
+              - attributes
+            properties:
+              lid:
+                type: string
+                format: uuid
+              type:
+                $ref: "#/components/schemas/EmployeesTypeEnum"
+              attributes:
+                type: object
+                required:
+                  - email
+                properties:
+                  email:
+                    type: string
+                    format: email
     CreateEmployeeLoginInfo:
       title: CreateEmployeeLoginInfo
       type: object
@@ -747,7 +728,6 @@ components:
       type: object
       required:
         - data
-        - included
       properties:
         data:
           type: object
@@ -755,7 +735,6 @@ components:
             - id
             - type
             - attributes
-            - relationships
           properties:
             id: 
               $ref: '#/components/schemas/MeTypeEnum'
@@ -766,51 +745,48 @@ components:
               required:
                 - vacationDaysTotal
                 - vacationDaysLeft
-                - email
+                - name
+                - surname
               properties:
                 vacationDaysTotal:
                   type: integer
                   format: int32
+                  minimum: 0
                 vacationDaysLeft:
                   type: integer
                   format: int32
-                email:
+                  minimum: 0
+                name:
                   type: string
-                  format: email
+                surname:
+                  type: string
             relationships:
-              type: object
-              required:
-                - supervisor
-              properties:
-                supervisor:
-                  type: object
-                  required:
-                    - data
-                  properties:
-                    data:
-                      type: object
-                      required:
-                        - id
-                        - type
-                      properties:
-                        id:
-                          type: string
-                        type:
-                          $ref: '#/components/schemas/EmployeesTypeEnum'
+              $ref: '#/components/schemas/RelationshipSupervisor'
         included:
           type: array
           uniqueItems: true
           minItems: 0
           items: 
             $ref: "#/components/schemas/EmployeeIncluded"
+    EmployeeRelationshipData:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - id
+            - type
+          properties:
+            id:
+              type: string
+            type:
+              $ref: '#/components/schemas/EmployeesTypeEnum'
     EmployeesTypeEnum:
       title: EmployeesTypeEnum
       type: string
       enum: [ employees ]
-    EmploymentStatusEnum:
-      title: EmploymentStatusEnum
-      type: string
-      enum: [ 'CURRENT', 'FORMER', 'ALL' ]
     Error:
       title: Error
       type: object
@@ -958,6 +934,7 @@ components:
             workDays:
               type: integer
               format: int32
+              minimum: 0
             leaveType:
               $ref: '#/components/schemas/LeaveRequestLeaveTypeEnum'
             leaveTypeDetails:
@@ -976,18 +953,15 @@ components:
             modifiedAt:
               type: string
               format: date-time
-    LeaveRequestsSummary:
-      title: LeaveRequestsSummary
-      type: object
-      required:
-        - data
-      properties:
-        data:
-          type: array
-          uniqueItems: true
-          minItems: 0
-          items: 
-            $ref: '#/components/schemas/LeaveRequestSummary'
+    PersonalLeaveRequest:
+      allOf:
+        - $ref: '#/components/schemas/LeaveRequestSummary'
+        - type: object
+          required:
+            - relationships
+          properties:
+            relationships:
+              $ref: '#/components/schemas/RelationshipSubstitute'
     LoggedinEmployee:
       title: LoggedinEmployee
       type: object
@@ -1073,21 +1047,89 @@ components:
         totalElements:
           type: integer
           format: int32
-    PersonalLeaveRequestsSummary:
-      title: PersonalLeaveRequestsSummary
-      allOf:
-        - $ref: '#/components/schemas/LeaveRequestsSummary'
-        - type: object
+    PersonalLeaveRequests:
+      title: PersonalLeaveRequests
+      type: object
+      required:
+        - data
+      properties:
+        meta:
+          type: object
           required:
-            - meta
+            - page
           properties:
-            meta:
-              type: object
-              required:
-                - page
-              properties:
-                page:
-                  $ref: '#/components/schemas/PaginationMetadata'
+            page:
+              $ref: '#/components/schemas/PaginationMetadata'
+        data:
+          type: array
+          uniqueItems: true
+          minItems: 0
+          items: 
+            $ref: '#/components/schemas/PersonalLeaveRequest'
+        included:
+          type: array
+          uniqueItems: true
+          minItems: 0
+          items: 
+            $ref: "#/components/schemas/EmployeeIncluded"
+    RelationshipInitiator:
+      title: RelationshipInitiator
+      type: object
+      required:
+        - initiator
+      properties:
+        initiator:
+          $ref: '#/components/schemas/EmployeeRelationshipData'
+    RelationshipHR:
+      title: RelationshipHR
+      type: object
+      required:
+        - HR
+      properties:
+        HR:
+          $ref: '#/components/schemas/EmployeeRelationshipData'
+    RelationshipRecentLeaveRequests:
+      title: RelationshipRecentLeaveRequests
+      type: object
+      required:
+       - recentLeaveRequests
+      properties:
+        recentLeaveRequests:
+          type: object
+          required:
+            - data
+          properties:
+            data:
+              type: array
+              uniqueItems: true
+              minItems: 0
+              items:
+                type: object
+                required:
+                  - id
+                  - type
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  type:
+                    $ref: '#/components/schemas/LeaveRequestsTypeEnum'
+    RelationshipSubstitute:
+      title: RelationshipSubstitute
+      type: object
+      required:
+        - substitute
+      properties:
+        substitute:
+          $ref: '#/components/schemas/EmployeeRelationshipData'
+    RelationshipSupervisor:
+      title: RelationshipSupervisor
+      type: object
+      required:
+        - supervisor
+      properties:
+        supervisor:
+          $ref: '#/components/schemas/EmployeeRelationshipData'
     ResetPasswordEmployee:
       title: ResetPasswordEmployee
       type: object
@@ -1114,11 +1156,7 @@ components:
     LeaveRequestStatusEnum:
       title: LeaveRequestStatusEnum
       type: string
-      enum: [ 'AWAITING_SUBSTITUTE', 'AWAITING_SUPERVISOR', 'AWAITING_HR', 'APPROVED', 'DENIED' ]
-    LeaveRequestStatusFilterEnum:
-      title: LeaveRequestStatusFilterEnum
-      type: string
-      enum: [ 'PENDING', 'APPROVED', 'DENIED' ]
+      enum: [ 'AWAITING_INITIATOR', 'AWAITING_SUBSTITUTE', 'AWAITING_SUPERVISOR', 'AWAITING_HR', 'APPROVED', 'DENIED' ]
     LeaveRequestLeaveTypeEnum:
       title: LeaveRequestLeaveTypeEnum
       type: string
@@ -1130,7 +1168,6 @@ components:
         - id
         - type
         - attributes
-        - relationships
       properties:
         id: 
           type: string
@@ -1152,36 +1189,12 @@ components:
             currentEmployee:
               type: boolean
         relationships:
-          type: object
-          required:
-            - recentLeaveRequests
-          properties:
-            recentLeaveRequests:
-              type: object
-              required:
-                - data
-              properties:
-                data:
-                  type: array
-                  uniqueItems: true
-                  minItems: 0
-                  items:
-                    type: object
-                    required:
-                      - id
-                      - type
-                    properties:
-                      id:
-                        type: string
-                        format: uuid
-                      type:
-                        $ref: '#/components/schemas/LeaveRequestsTypeEnum'
+          $ref: '#/components/schemas/RelationshipRecentLeaveRequests'
     SubordinatesSummary:
       title: SubordinatesSummary
       type: object
       required:
         - data
-        - included
       properties:
         data:
           type: array
@@ -1225,6 +1238,7 @@ components:
                 workDays:
                   type: integer
                   format: int32
+                  minimum: 0
                 leaveType:
                   $ref: '#/components/schemas/LeaveRequestLeaveTypeEnum'
                 leaveTypeDetails:
@@ -1407,8 +1421,25 @@ components:
       value: {
         "data": {
           "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          "type": "leave-requests"
-        }
+          "type": "leave-requests",
+          "relationships": {
+            "initiator": {
+              "data": {
+                "id": "2c963f66",
+                "type": "employees"
+              }
+            }
+          }
+        },
+        "included": [
+          {
+            "id": "2c963f66",
+            "type": "employees",
+            "attributes": {
+              "vacationDaysLeft": 18
+            }
+          }
+        ]
       }
     CreateEmployeeLoginInfoRequestBodyExample:
       value: {
@@ -1435,12 +1466,21 @@ components:
           "relationships": {
             "substitute": {
               "data": {
-                "email": "user@example.com",
+                "lid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 "type": "employees"
               }
             }
           }
-        }
+        },
+        "included": [
+          {
+            "lid": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "type": "employees",
+            "attributes": {
+              "email": "testing@example.com"
+            }
+          }
+        ]
       }
     InternalServerErrorResponseExample:
       value: {
@@ -1465,8 +1505,7 @@ components:
             "vacationDaysTotal": 21,
             "vacationDaysLeft": 18,
             "name": "Henri-Marie",
-            "surname": "Coandă",
-            "role": "Redactor"
+            "surname": "Coandă"
           },
           "relationships": {
             "supervisor": {

@@ -14,6 +14,7 @@ import {
   MailerError,
   UnverifiedEmailError,
   InvalidCredentialsError,
+  ForbiddenError,
 } from "../errors/CustomErrors";
 import envConfig from "../utils/envConfig";
 import log from "../utils/logger";
@@ -26,6 +27,7 @@ import * as transformations from "../utils/transformations";
  * Register Emplpoyee Function - only if email not verified and is a current employee
  * @param employeeLoginCredentialsDBInput The Employee's Login Credentials to add
  * @param employeeCNP Employee's CNP(encrypted)
+ * @returns The DB Query Result Object
  */
 export const registerEmployee = async (
   employeeDBInput: dbModels.registerPrismaEmployeeUpdateInput,
@@ -45,7 +47,7 @@ export const registerEmployee = async (
       where: { cnp: transformedEmployeeCNP },
     });
 
-    // Handle case where employee is not found or is no longer an employee
+    // Handle case where employee is not found or is no longer employed
     if (!existingEmployee || !existingEmployee.currentEmployee) {
       throw new NotFoundError(`Employee with CNP ${employeeCNP} not found.`, {
         pointer: "/data/attributes/cnp",
@@ -79,7 +81,8 @@ export const registerEmployee = async (
 
 /**
  * Confirm Emplpoyee Email Function - only if email not verified and is a current employee
- * @param employeeId Employee's unique id from Charisma
+ * @param employeeId Employee's unique id (from token)
+ * @returns The DB Query Result Object
  */
 export const emailConfirmation = async (
   employeeId: string
@@ -90,7 +93,7 @@ export const emailConfirmation = async (
       where: { id: employeeId },
     });
 
-    // Handle case where employee is not found or is no longer an employee
+    // Handle case where employee is not found or is no longer employed
     if (!existingEmployee || !existingEmployee.currentEmployee) {
       throw new NotFoundError(`Employee with ID ${employeeId} not found.`);
     }
@@ -124,6 +127,7 @@ export const emailConfirmation = async (
  * Login Employee Function - only if email verified and is a current employee
  * @param loginEmail Email provided on login
  * @param loginPassword Password provided on login
+ * @returns Result Object Containing Employee's id
  */
 export const loginEmployee = async (
   loginEmail: string,
@@ -146,13 +150,17 @@ export const loginEmployee = async (
       },
     });
 
-    // Handle case where employee is not found Or is no longer an employee Or has no password set (last case unlikley)
-    if (
-      !loggedinEmployee ||
-      !loggedinEmployee.currentEmployee ||
-      !loggedinEmployee.password
-    ) {
+    // Handle case where employee is not found Or has no password set (latter case unlikley)
+    if (!loggedinEmployee || !loggedinEmployee.password) {
       throw new InvalidCredentialsError(`Invalid credentials on login.`);
+    }
+
+    // Handle case where employee is no longer employed
+    if (!loggedinEmployee.currentEmployee) {
+      throw new ForbiddenError(
+        "Login attempt from user that is no longer an employee",
+        "This account has been disabled."
+      );
     }
 
     // Verify password (password must be non null since )
@@ -182,6 +190,7 @@ export const loginEmployee = async (
 /**
  * Forgot Password Function
  * @param requestorEmail Email provided on forgot password request
+ * @returns The DB Query Result Object
  */
 export const forgotPassword = async (
   requestorEmail: string
@@ -211,7 +220,7 @@ export const forgotPassword = async (
 /**
  * Reset Password Function - only if is current employee
  * @param newPasswordDBInput New Employee password
- * @param employeeId Employee's unique id from Charisma
+ * @param employeeId Employee's unique id (from token)
  */
 export const resetPassword = async (
   newPasswordDBInput: dbModels.resetPasswordPrismaEmployeeUpdateInput,
@@ -223,7 +232,7 @@ export const resetPassword = async (
       where: { id: employeeId },
     });
 
-    // Handle case where employee is not found or is no longer an employee
+    // Handle case where employee is not found or is no longer employed
     if (!existingEmployee || !existingEmployee.currentEmployee) {
       throw new NotFoundError(`Employee with ID ${employeeId} not found.`);
     }
@@ -300,7 +309,6 @@ export async function registeredEmployeeMailer(
 
     log.info("Message sent: %s", info.messageId);
   } catch (err: any) {
-    console.log(err);
     throw new MailerError(err.message);
   }
 }
@@ -315,7 +323,6 @@ export async function forgotPasswordMailer(
   employeeId: string
 ): Promise<void> {
   try {
-    console.log("hello");
     // Create token-link for email confirmation
     const payload: Token = {
       employeeId: employeeId,
@@ -354,7 +361,6 @@ export async function forgotPasswordMailer(
 
     log.info("Message sent: %s", info.messageId);
   } catch (err: any) {
-    console.log(err);
     throw new MailerError(err.message);
   }
 }

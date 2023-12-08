@@ -18,9 +18,12 @@ export class UnauthorizedError extends BaseError {
  * Forbidden Error Thrown when User is NOT in Server/Appropriate Role
  */
 export class ForbiddenError extends BaseError {
-  constructor(message: string) {
+  readonly detail?: string;
+  constructor(message: string, detail?: string) {
     super(message);
     this.name = this.constructor.name;
+
+    this.detail = detail;
   }
 
   readonly code = "FORBIDDEN_ERROR";
@@ -33,11 +36,13 @@ export class ForbiddenError extends BaseError {
  */
 export class NotFoundError extends BaseError {
   readonly source?: ErrorSource;
-  constructor(message: string, source?: ErrorSource) {
+  readonly detail?: string;
+  constructor(message: string, source?: ErrorSource, detail?: string) {
     super(message);
     this.name = this.constructor.name;
 
     this.source = source;
+    this.detail = detail;
   }
 
   readonly code = "NOT_FOUND_ERROR";
@@ -130,9 +135,9 @@ export class ExpiredTokenError extends BaseError {
 }
 
 /**
- * Error thrown when there is a Validation Issue (Excludes Schema Validation)
+ * Error thrown when there is a Bad Request issue
  */
-export class ValidationError extends BaseError {
+export class BadRequestError extends BaseError {
   readonly source?: ErrorSource;
   readonly detail: string;
   constructor(message: string, detail: string, source?: ErrorSource) {
@@ -142,8 +147,8 @@ export class ValidationError extends BaseError {
     this.detail = detail;
     this.source = source;
   }
-  readonly code = "VALIDATION_ERROR";
-  readonly title = "Validation Error";
+  readonly code = "BAD_REQUEST_ERROR";
+  readonly title = "The request was not valid";
   readonly status = 400;
 }
 

@@ -10,37 +10,12 @@
  */
 
 export type ApprovalLeaveRequest = LeaveRequestSummary & {
-  relationships: {
-    initiator: {
-      data: {
-        id: string;
-        type: EmployeesTypeEnum;
-      };
-    };
-    substitute: {
-      data: {
-        id: string;
-        type: EmployeesTypeEnum;
-      };
-    };
-    supervisor: {
-      data: {
-        id: string;
-        type: EmployeesTypeEnum;
-      };
-    };
-    HR: {
-      data: {
-        id: string;
-        type: EmployeesTypeEnum;
-      };
-    };
-  };
+  relationships: RelationshipInitiator & RelationshipSubstitute & RelationshipSupervisor & RelationshipHR;
 };
 
 /** ApprovalLeaveRequests */
 export interface ApprovalLeaveRequests {
-  meta: {
+  meta?: {
     page: PaginationMetadata;
   };
   /**
@@ -52,7 +27,7 @@ export interface ApprovalLeaveRequests {
    * @minItems 0
    * @uniqueItems true
    */
-  included: EmployeeIncluded[];
+  included?: EmployeeIncluded[];
 }
 
 /** CreatedEmployee */
@@ -66,10 +41,25 @@ export interface CreatedEmployee {
 /** CreatedLeaveRequest */
 export interface CreatedLeaveRequest {
   data: {
-    /** @format uuid */
     id: string;
     type: LeaveRequestsTypeEnum;
+    relationships?: RelationshipInitiator;
   };
+  /**
+   * @minItems 0
+   * @uniqueItems true
+   */
+  included?: {
+    id: string;
+    type: EmployeesTypeEnum;
+    attributes: {
+      /**
+       * @format int32
+       * @min 0
+       */
+      vacationDaysLeft: number;
+    };
+  }[];
 }
 
 /** CreateLeaveRequest */
@@ -81,7 +71,10 @@ export interface CreateLeaveRequest {
       startDate: string;
       /** @format date */
       endDate: string;
-      /** @format int32 */
+      /**
+       * @format int32
+       * @min 0
+       */
       workDays: number;
       leaveType: LeaveRequestLeaveTypeEnum;
       /**
@@ -93,13 +86,26 @@ export interface CreateLeaveRequest {
     relationships: {
       substitute: {
         data: {
-          /** @format email */
-          email: string;
+          /** @format uuid */
+          lid: string;
           type: EmployeesTypeEnum;
         };
       };
     };
   };
+  /**
+   * @minItems 1
+   * @uniqueItems true
+   */
+  included: {
+    /** @format uuid */
+    lid: string;
+    type: EmployeesTypeEnum;
+    attributes: {
+      /** @format email */
+      email: string;
+    };
+  }[];
 }
 
 /** CreateEmployeeLoginInfo */
@@ -144,39 +150,38 @@ export interface EmployeePersonalSummary {
     id: MeTypeEnum;
     type: EmployeesTypeEnum;
     attributes: {
-      /** @format int32 */
+      /**
+       * @format int32
+       * @min 0
+       */
       vacationDaysTotal: number;
-      /** @format int32 */
+      /**
+       * @format int32
+       * @min 0
+       */
       vacationDaysLeft: number;
-      /** @format email */
-      email: string;
+      name: string;
+      surname: string;
     };
-    relationships: {
-      supervisor: {
-        data: {
-          id: string;
-          type: EmployeesTypeEnum;
-        };
-      };
-    };
+    relationships?: RelationshipSupervisor;
   };
   /**
    * @minItems 0
    * @uniqueItems true
    */
-  included: EmployeeIncluded[];
+  included?: EmployeeIncluded[];
+}
+
+export interface EmployeeRelationshipData {
+  data: {
+    id: string;
+    type: EmployeesTypeEnum;
+  };
 }
 
 /** EmployeesTypeEnum */
 export enum EmployeesTypeEnum {
   Employees = "employees",
-}
-
-/** EmploymentStatusEnum */
-export enum EmploymentStatusEnum {
-  CURRENT = "CURRENT",
-  FORMER = "FORMER",
-  ALL = "ALL",
 }
 
 /** Error */
@@ -251,7 +256,10 @@ export interface LeaveRequestSummary {
     startDate: string;
     /** @format date */
     endDate: string;
-    /** @format int32 */
+    /**
+     * @format int32
+     * @min 0
+     */
     workDays: number;
     leaveType: LeaveRequestLeaveTypeEnum;
     /**
@@ -269,14 +277,9 @@ export interface LeaveRequestSummary {
   };
 }
 
-/** LeaveRequestsSummary */
-export interface LeaveRequestsSummary {
-  /**
-   * @minItems 0
-   * @uniqueItems true
-   */
-  data: LeaveRequestSummary[];
-}
+export type PersonalLeaveRequest = LeaveRequestSummary & {
+  relationships: RelationshipSubstitute;
+};
 
 /** LoggedinEmployee */
 export interface LoggedinEmployee {
@@ -324,12 +327,57 @@ export interface PaginationMetadata {
   totalElements: number;
 }
 
-/** PersonalLeaveRequestsSummary */
-export type PersonalLeaveRequestsSummary = LeaveRequestsSummary & {
-  meta: {
+/** PersonalLeaveRequests */
+export interface PersonalLeaveRequests {
+  meta?: {
     page: PaginationMetadata;
   };
-};
+  /**
+   * @minItems 0
+   * @uniqueItems true
+   */
+  data: PersonalLeaveRequest[];
+  /**
+   * @minItems 0
+   * @uniqueItems true
+   */
+  included?: EmployeeIncluded[];
+}
+
+/** RelationshipInitiator */
+export interface RelationshipInitiator {
+  initiator: EmployeeRelationshipData;
+}
+
+/** RelationshipHR */
+export interface RelationshipHR {
+  HR: EmployeeRelationshipData;
+}
+
+/** RelationshipRecentLeaveRequests */
+export interface RelationshipRecentLeaveRequests {
+  recentLeaveRequests: {
+    /**
+     * @minItems 0
+     * @uniqueItems true
+     */
+    data: {
+      /** @format uuid */
+      id: string;
+      type: LeaveRequestsTypeEnum;
+    }[];
+  };
+}
+
+/** RelationshipSubstitute */
+export interface RelationshipSubstitute {
+  substitute: EmployeeRelationshipData;
+}
+
+/** RelationshipSupervisor */
+export interface RelationshipSupervisor {
+  supervisor: EmployeeRelationshipData;
+}
 
 /** ResetPasswordEmployee */
 export interface ResetPasswordEmployee {
@@ -347,16 +395,10 @@ export interface ResetPasswordEmployee {
 
 /** LeaveRequestStatusEnum */
 export enum LeaveRequestStatusEnum {
+  AWAITING_INITIATOR = "AWAITING_INITIATOR",
   AWAITING_SUBSTITUTE = "AWAITING_SUBSTITUTE",
   AWAITING_SUPERVISOR = "AWAITING_SUPERVISOR",
   AWAITING_HR = "AWAITING_HR",
-  APPROVED = "APPROVED",
-  DENIED = "DENIED",
-}
-
-/** LeaveRequestStatusFilterEnum */
-export enum LeaveRequestStatusFilterEnum {
-  PENDING = "PENDING",
   APPROVED = "APPROVED",
   DENIED = "DENIED",
 }
@@ -380,19 +422,7 @@ export interface SubordinateSummary {
     role: string;
     currentEmployee?: boolean;
   };
-  relationships: {
-    recentLeaveRequests: {
-      /**
-       * @minItems 0
-       * @uniqueItems true
-       */
-      data: {
-        /** @format uuid */
-        id: string;
-        type: LeaveRequestsTypeEnum;
-      }[];
-    };
-  };
+  relationships?: RelationshipRecentLeaveRequests;
 }
 
 /** SubordinatesSummary */
@@ -406,7 +436,7 @@ export interface SubordinatesSummary {
    * @minItems 0
    * @uniqueItems true
    */
-  included: LeaveRequestIncluded[];
+  included?: LeaveRequestIncluded[];
 }
 
 /** TokensTypeEnum */
@@ -423,7 +453,10 @@ export interface UpdateLeaveRequest {
       startDate?: string;
       /** @format date */
       endDate?: string;
-      /** @format int32 */
+      /**
+       * @format int32
+       * @min 0
+       */
       workDays?: number;
       leaveType?: LeaveRequestLeaveTypeEnum;
       /**
@@ -728,11 +761,8 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      */
     listSubordinates: (
       query?: {
-        /**
-         * Employment status filter.
-         * @default "CURRENT"
-         */
-        employmentStatus?: EmploymentStatusEnum;
+        /** Employment status filter. */
+        "filter[currentEmployee]"?: boolean;
       },
       params: RequestParams = {},
     ) =>
@@ -754,9 +784,13 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     listApprovalLeaveRequests: (
-      query: {
-        /** Leave Request Approval Status */
-        statusFilter: LeaveRequestStatusFilterEnum;
+      query?: {
+        /**
+         * Leave Request Approval Status
+         * @minItems 0
+         * @uniqueItems true
+         */
+        "filter[status]"?: LeaveRequestStatusEnum[];
         /**
          * Page Number (zero-based) for Pagination
          * @format int32
@@ -791,9 +825,13 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     listPersonalLeaveRequests: (
-      query: {
-        /** Leave Request Approval Status */
-        statusFilter: LeaveRequestStatusFilterEnum;
+      query?: {
+        /**
+         * Leave Request Approval Status
+         * @minItems 0
+         * @uniqueItems true
+         */
+        "filter[status]"?: LeaveRequestStatusEnum[];
         /**
          * Page Number (zero-based) for Pagination
          * @format int32
@@ -810,7 +848,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<PersonalLeaveRequestsSummary, Errors>({
+      this.request<PersonalLeaveRequests, Errors>({
         path: `/employees/@me/leave-requests`,
         method: "GET",
         query: query,

@@ -47,7 +47,7 @@ export function mapDBModelsIDPrismaEmployeeGetPayloadToApiModelsLoggedinEmployee
 ): apiModels.LoggedinEmployee {
   const payload: Token = {
     employeeId: employeeIDQueryResult.id,
-    type: TokenTypeEnum.ACCESS,
+    type: TokenTypeEnum.ACCESS_USER,
   };
   const token = jwt.sign(payload, envConfig.JWT_SECRET, {
     expiresIn: 3600,

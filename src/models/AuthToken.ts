@@ -4,7 +4,7 @@ export type Token = {
 };
 
 export enum TokenTypeEnum {
-  ACCESS = "ACCESS",
+  ACCESS_USER = "ACCESS_USER",
   EMAIL_VALIDATION = "EMAIL_VALIDATION",
   PASSWORD_RESET = "PASSWORD_RESET",
 }

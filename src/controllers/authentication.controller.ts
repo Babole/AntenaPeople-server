@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 
 import * as apiModels from "../models/AntenaPeople";
 import * as authenticationMappings from "../mappings/authentication.map";
-import * as AuthenticationService from "../services/authentication.service";
+import * as authenticationService from "../services/authentication.service";
 import { Token } from "../models/AuthToken";
 
 export async function registerEmployeeHandler(
@@ -22,12 +22,12 @@ export async function registerEmployeeHandler(
 
     const employeeCNP = req.body.data.attributes.cnp;
 
-    const DBOut = await AuthenticationService.registerEmployee(
+    const DBOut = await authenticationService.registerEmployee(
       employeeLoginCredentialsDBInput,
       employeeCNP
     );
 
-    await AuthenticationService.registeredEmployeeMailer(
+    await authenticationService.registeredEmployeeMailer(
       DBOut.email!,
       DBOut.id
     );
@@ -54,7 +54,7 @@ export async function emailConfirmationHandler(
   try {
     const { employeeId } = res.locals.decodedToken;
 
-    const DBOut = await AuthenticationService.emailConfirmation(employeeId);
+    const DBOut = await authenticationService.emailConfirmation(employeeId);
 
     const ApiRes =
       authenticationMappings.mapDBModelsIDPrismaEmployeeGetPayloadToApiModelsLoggedinEmployee(
@@ -82,7 +82,7 @@ export async function loginEmployeeHandler(
   try {
     const { email, password } = req.body.data.attributes;
 
-    const DBOut = await AuthenticationService.loginEmployee(email, password);
+    const DBOut = await authenticationService.loginEmployee(email, password);
 
     const ApiRes =
       authenticationMappings.mapDBModelsIDPrismaEmployeeGetPayloadToApiModelsLoggedinEmployee(
@@ -106,15 +106,15 @@ export async function forgotPasswordHandler(
   try {
     const { email } = req.body.data.attributes;
 
-    const employeInfoDBOut = await AuthenticationService.forgotPassword(email);
+    const employeInfoDBOut = await authenticationService.forgotPassword(email);
 
-    // Send email only if email verified and is a current employee
+    // Send email only if email verified and is a currently employed
     if (
       employeInfoDBOut &&
       employeInfoDBOut.currentEmployee &&
       employeInfoDBOut.emailVerified
     ) {
-      await AuthenticationService.forgotPasswordMailer(
+      await authenticationService.forgotPasswordMailer(
         email,
         employeInfoDBOut.id
       );
@@ -139,7 +139,7 @@ export async function resetPasswordHandler(
         req.body
       );
 
-    await AuthenticationService.resetPassword(newPasswordDBInput, employeeId);
+    await authenticationService.resetPassword(newPasswordDBInput, employeeId);
 
     return res.status(204).send();
   } catch (err: any) {

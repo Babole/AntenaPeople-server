@@ -33,7 +33,10 @@ export const verifyToken = (permissions: TokenTypeEnum) => {
 
       if (decoded && decoded.employeeId && decoded.type) {
         if (decoded.type !== permissions)
-          throw new ForbiddenError(`Missing permissions for ${permissions}`);
+          throw new ForbiddenError(
+            `Missing permissions for ${permissions}`,
+            "Missing permissions."
+          );
 
         res.locals.decodedToken = decoded;
         return next();
