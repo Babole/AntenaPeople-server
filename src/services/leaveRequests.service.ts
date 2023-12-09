@@ -4,6 +4,7 @@ import { LeaveType } from "@prisma/client";
 
 import {
   BadRequestError,
+  ForbiddenError,
   NotFoundError,
   PrismaError,
 } from "../errors/CustomErrors";
@@ -259,8 +260,8 @@ export const createLeaveRequest = async (
 
     // Update employee's vacationDaysLeft accordingly
     const newVacationDaysLeft = vacationDaysLeftCalculator(
-      leaveRequestDBInput.leaveType,
       initiator.vacationDaysLeft,
+      leaveRequestDBInput.leaveType,
       leaveRequestDBInput.workDays
     );
 
@@ -298,12 +299,69 @@ export const createLeaveRequest = async (
   }
 };
 
+/**
+ * Update Leave Request Function
+ * - checks if leave-request exists
+ * - checks if token employee id corresponds to initiator / substitute / supervisor / hr
+ *   - initiator can ONLY update startDate, endDate, workDays, leaveType, leaveTypeDetails
+ *     - initiator can ONLY update if status === AWAITING_SUBSTITUTE
+ *     - checks if employee's days_left are enough for the work days taken
+ *   - substitute / supervisor / hr can ONLY update status, rejectReason
+ * @param leaveRequestDBInput The Leave-Request data to update
+ * @param leaveRequestId The id of the Leave-Request to update
+ * @param employeeId The token employee id
+ */
+export const updateLeaveRequest = async (
+  leaveRequestDBInput: dbModels.PrismaLeaveRequestUpdateInput,
+  leaveRequestId: string,
+  employeeId: string
+): Promise<void> => {
+  try {
+    // Find leave-request
+    const initialLeaveRequest = await db.leaveRequest.findUnique({
+      where: { id: leaveRequestId },
+      include: {
+        initiator: true,
+      },
+    });
+
+    // Check if leave-request exists
+    if (!initialLeaveRequest) {
+      throw new NotFoundError(
+        `Leave-request not found when updating leave-request.`,
+        { pointer: "/leaveRequestId" }
+      );
+    }
+
+    checkUserPermissions(employeeId, initialLeaveRequest);
+
+    if (employeeId === initialLeaveRequest.initiator.id) {
+      await updateLeaveRequestByInitiator(
+        leaveRequestDBInput,
+        leaveRequestId,
+        initialLeaveRequest
+      );
+    } else {
+      await updateLeaveRequestBySubstituteSupervisorHR(
+        leaveRequestDBInput,
+        leaveRequestId
+      );
+    }
+  } catch (err: any) {
+    if (err instanceof BaseError) throw err;
+
+    throw new PrismaError(err.message);
+  }
+};
+
 // helper functions
 
-export const vacationDaysLeftCalculator = (
-  leaveType: LeaveType,
+const vacationDaysLeftCalculator = (
   vacationDaysLeft: number,
-  workDaysAbsent: number
+  leaveType: LeaveType,
+  workDaysAbsent: number,
+  initialLeaveType?: LeaveType,
+  initialWorkDays?: number
 ): number | undefined => {
   let newVacationDaysLeft = 0;
   if (leaveType === LeaveType.VACATION || leaveType === LeaveType.OTHER) {
@@ -320,4 +378,87 @@ export const vacationDaysLeftCalculator = (
     );
 
   return newVacationDaysLeft;
+};
+
+const checkUserPermissions = (
+  employeeId: string,
+  leaveRequest: dbModels.fullWithInitiatorPrismaLeaveRequestGetPayload
+): void => {
+  const allowedUserIds = [
+    leaveRequest.initiator.id,
+    leaveRequest.substituteId,
+    leaveRequest.initiator.idSupervisor,
+    leaveRequest.initiator.idHr,
+  ];
+
+  if (!allowedUserIds.includes(employeeId)) {
+    throw new ForbiddenError(
+      `Missing permissions for ${employeeId} to update ${leaveRequest.id}`,
+      "Missing permissions."
+    );
+  }
+};
+
+const updateLeaveRequestByInitiator = async (
+  leaveRequestDBInput: dbModels.PrismaLeaveRequestUpdateInput,
+  leaveRequestId: string,
+  initialLeaveRequest: dbModels.fullWithInitiatorPrismaLeaveRequestGetPayload
+): Promise<void> => {
+  if (initialLeaveRequest.status !== LeaveRequestStatus.AWAITING_SUBSTITUTE) {
+    throw new ForbiddenError(
+      "Initiator can only update leave-requests with status AWAITING_SUBSTITUTE.",
+      "Initiator can only update leave-requests with status AWAITING_SUBSTITUTE."
+    );
+  }
+
+  const allowedFields = [
+    "startDate",
+    "endDate",
+    "workDays",
+    "leaveType",
+    "leaveTypeDetails",
+  ];
+
+  validateUpdatedFields(leaveRequestDBInput, allowedFields);
+
+  let newVacationDaysLeft;
+  if (leaveRequestDBInput.leaveType && leaveRequestDBInput.workDays) {
+    newVacationDaysLeft = vacationDaysLeftCalculator(
+      leaveRequestDBInput.leaveType,
+      initialLeaveRequest.initiator.vacationDaysLeft,
+      leaveRequestDBInput.workDays
+    );
+  }
+
+  await db.$transaction(async (tx) => {
+    await Promise.all([
+      // Update the leave request
+      tx.leaveRequest.update({
+        where: { id: leaveRequestId },
+        data: leaveRequestDBInput,
+      }),
+      // Update the employee's vacationDaysLeft
+      updateEmployeeVacationDays(
+        initialLeaveRequest.initiator.id,
+        newVacationDaysLeft,
+        tx
+      ),
+    ]);
+  });
+};
+
+const validateUpdatedFields = (
+  leaveRequestDBInput: dbModels.PrismaLeaveRequestUpdateInput,
+  allowedFields: string[]
+): void => {
+  const invalidFields = Object.keys(leaveRequestDBInput).filter(
+    (field) => !allowedFields.includes(field)
+  );
+
+  if (invalidFields.length > 0) {
+    throw new ForbiddenError(
+      `Missing permissions to update leave-request`,
+      "Missing permissions."
+    );
+  }
 };

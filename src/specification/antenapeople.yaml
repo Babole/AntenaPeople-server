@@ -217,7 +217,7 @@ paths:
           - bearerAuth: []
         operationId: UpdateLeaveRequestInfo
         summary: Updates leave request information
-        description: This can be done by logged in user or relevant management
+        description: This can be done by logged in user (leave-request initiator)
         parameters: 
         - $ref: '#/components/parameters/LeaveRequestIdPathParameter'
         requestBody:

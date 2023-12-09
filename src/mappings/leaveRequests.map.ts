@@ -235,6 +235,28 @@ export function mapCreatedLeaveRequestDBOutToApiModelsCreatedLeaveRequest(
   };
 }
 
+/**
+ * Utility Function that Maps the update Leave-Request request object to the db query input
+ * @param leaveRequestReqBody The new Leave-Request Request Body
+ * @returns The Mapped DTO
+ */
+export function mapApiModelsUpdateLeaveRequestToDBModelsPrismaLeaveRequestUpdateInput(
+  leaveRequestReqBody: apiModels.UpdateLeaveRequest
+): dbModels.PrismaLeaveRequestUpdateInput {
+  const { attributes } = leaveRequestReqBody.data;
+  return {
+    startDate: attributes.startDate
+      ? new Date(attributes.startDate)
+      : undefined,
+    endDate: attributes.endDate ? new Date(attributes.endDate) : undefined,
+    workDays: attributes.workDays,
+    leaveType: attributes.leaveType,
+    leaveTypeDetails: attributes.leaveTypeDetails,
+    status: attributes.status,
+    rejectReason: attributes.rejectReason,
+  };
+}
+
 // -----
 // Relationships and Included Mappings
 // --

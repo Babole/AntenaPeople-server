@@ -38,7 +38,7 @@ export async function registerEmployeeHandler(
       );
 
     return res
-      .status(200)
+      .status(201)
       .set("Content-Type", "application/vnd.api+json")
       .json(ApiRes);
   } catch (err: any) {
@@ -90,7 +90,7 @@ export async function loginEmployeeHandler(
       );
 
     return res
-      .status(200)
+      .status(201)
       .set("Content-Type", "application/vnd.api+json")
       .json(ApiRes);
   } catch (err: any) {

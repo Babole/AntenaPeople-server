@@ -105,7 +105,7 @@ export async function personalLeaveRequestsHandler(
   }
 }
 
-export async function createLeaveRequestsHandler(
+export async function createLeaveRequestHandler(
   req: Request<
     Record<string, never>,
     apiModels.CreatedLeaveRequest,
@@ -132,9 +132,41 @@ export async function createLeaveRequestsHandler(
       );
 
     return res
-      .status(200)
+      .status(201)
       .set("Content-Type", "application/vnd.api+json")
       .json(ApiResBody);
+  } catch (err: any) {
+    return next(err);
+  }
+}
+
+export async function updateLeaveRequestHandler(
+  req: Request<
+    {
+      leaveRequestId: string;
+    },
+    null,
+    apiModels.UpdateLeaveRequest
+  >,
+  res: Response<null, { decodedToken: Token }>,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { leaveRequestId } = req.params;
+    const { employeeId } = res.locals.decodedToken;
+
+    const updateLeaveRequestDBIn =
+      leaveRequestsMappings.mapApiModelsUpdateLeaveRequestToDBModelsPrismaLeaveRequestUpdateInput(
+        req.body
+      );
+
+    await leaveRequestsService.updateLeaveRequest(
+      updateLeaveRequestDBIn,
+      leaveRequestId,
+      employeeId
+    );
+
+    return res.status(204).send();
   } catch (err: any) {
     return next(err);
   }

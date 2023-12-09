@@ -21,7 +21,13 @@ leaveRequestsRouter.get(
 leaveRequestsRouter.post(
   "/employees/@me/leave-requests",
   auth.verifyToken(TokenTypeEnum.ACCESS_USER),
-  leaveRequestsController.createLeaveRequestsHandler
+  leaveRequestsController.createLeaveRequestHandler
+);
+
+leaveRequestsRouter.patch(
+  "/leave-requests/:leaveRequestId",
+  auth.verifyToken(TokenTypeEnum.ACCESS_USER),
+  leaveRequestsController.updateLeaveRequestHandler
 );
 
 export default leaveRequestsRouter;

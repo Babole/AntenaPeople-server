@@ -119,3 +119,12 @@ export const IDPrismaLeaveRequestSelect = {
 export type IDPrismaLeaveRequestGetPayload = Prisma.LeaveRequestGetPayload<{
   select: typeof IDPrismaLeaveRequestSelect;
 }>;
+
+export type PrismaLeaveRequestUpdateInput = Prisma.LeaveRequestUpdateInput;
+
+export type fullWithInitiatorPrismaLeaveRequestGetPayload =
+  Prisma.LeaveRequestGetPayload<{
+    include: {
+      initiator: true;
+    };
+  }>;
