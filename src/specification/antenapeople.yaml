@@ -223,6 +223,8 @@ paths:
         requestBody:
           $ref: '#/components/requestBodies/UpdateLeaveRequestRequestBody'
         responses:
+          200:
+            $ref: '#/components/responses/UpdatedLeaveRequestResponse'
           204: 
             $ref: '#/components/responses/NoContentResponse'
           401: 
@@ -469,6 +471,15 @@ components:
           examples:
             UnauthorizedError: 
               $ref: '#/components/examples/UnauthorizedErrorResponseExample'
+    UpdatedLeaveRequestResponse:
+      description: Updated Leave-Request Success Response (if employee's vacation-days-left were updated)
+      content:
+        application/vnd.api+json:
+          schema:
+            $ref: '#/components/schemas/CreatedLeaveRequest'
+          examples:
+            UpdatedLeaveRequest:
+              $ref: '#/components/examples/UpdatedLeaveRequestResponseExample'
     UploadedLeaveRequestSignatureFileResponse:
       description: Created Leave-Request Signature File Success Response
       content:
@@ -1677,6 +1688,30 @@ components:
           "timestamp": "2023-01-01T12:00:00.000000Z",
           "correlationId": "fc52fdb98b0072bda24c5b71a5c122fe"
         }
+      }
+    UpdatedLeaveRequestResponseExample:
+      value: {
+        "data": {
+          "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "type": "leave-requests",
+          "relationships": {
+            "initiator": {
+              "data": {
+                "id": "2c963f66",
+                "type": "employees"
+              }
+            }
+          }
+        },
+        "included": [
+          {
+            "id": "2c963f66",
+            "type": "employees",
+            "attributes": {
+              "vacationDaysLeft": 18
+            }
+          }
+        ]
       }
     UpdateLeaveRequestRequestBodyExample:
       value: {

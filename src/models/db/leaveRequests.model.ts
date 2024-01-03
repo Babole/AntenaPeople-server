@@ -128,3 +128,13 @@ export type fullWithInitiatorPrismaLeaveRequestGetPayload =
       initiator: true;
     };
   }>;
+
+export const uploadSignatureFilePrismaLeaveRequestSelect = {
+  id: true,
+  status: true,
+} satisfies Prisma.LeaveRequestSelect;
+
+export type uploadSignatureFilePrismaLeaveRequestGetPayload =
+  Prisma.LeaveRequestGetPayload<{
+    select: typeof uploadSignatureFilePrismaLeaveRequestSelect;
+  }>;

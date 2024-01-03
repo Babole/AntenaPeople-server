@@ -876,7 +876,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
   };
   leaveRequests = {
     /**
-     * @description This can be done by logged in user or relevant management
+     * @description This can be done by logged in user (leave-request initiator)
      *
      * @tags Leave Requests
      * @name UpdateLeaveRequestInfo
@@ -885,7 +885,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     updateLeaveRequestInfo: (leaveRequestId: string, data: UpdateLeaveRequest, params: RequestParams = {}) =>
-      this.request<any, Errors>({
+      this.request<CreatedLeaveRequest, Errors>({
         path: `/leave-requests/${leaveRequestId}`,
         method: "PATCH",
         body: data,

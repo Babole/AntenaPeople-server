@@ -145,10 +145,10 @@ export async function updateLeaveRequestHandler(
     {
       leaveRequestId: string;
     },
-    null,
+    apiModels.CreatedLeaveRequest | null,
     apiModels.UpdateLeaveRequest
   >,
-  res: Response<null, { decodedToken: Token }>,
+  res: Response<apiModels.CreatedLeaveRequest | null, { decodedToken: Token }>,
   next: NextFunction
 ): Promise<Response | void> {
   try {
@@ -160,13 +160,65 @@ export async function updateLeaveRequestHandler(
         req.body
       );
 
-    await leaveRequestsService.updateLeaveRequest(
-      updateLeaveRequestDBIn,
-      leaveRequestId,
-      employeeId
-    );
+    const updatedLeaveRequestDBOut =
+      await leaveRequestsService.updateLeaveRequest(
+        updateLeaveRequestDBIn,
+        leaveRequestId,
+        employeeId
+      );
+
+    if (updatedLeaveRequestDBOut) {
+      const ApiResBody =
+        leaveRequestsMappings.mapCreatedLeaveRequestDBOutToApiModelsCreatedLeaveRequest(
+          updatedLeaveRequestDBOut
+        );
+
+      return res
+        .status(200)
+        .set("Content-Type", "application/vnd.api+json")
+        .json(ApiResBody);
+    }
 
     return res.status(204).send();
+  } catch (err: any) {
+    return next(err);
+  }
+}
+
+export async function uploadSignatureFileHandler(
+  req: Request<
+    {
+      leaveRequestId: string;
+    },
+    apiModels.UploadedLeaveRequestSignatureFile,
+    Buffer
+  >,
+  res: Response<
+    apiModels.UploadedLeaveRequestSignatureFile,
+    { decodedToken: Token }
+  >,
+  next: NextFunction
+): Promise<Response | void> {
+  try {
+    const { leaveRequestId } = req.params;
+    const { employeeId } = res.locals.decodedToken;
+
+    const uploadedSignatureFileDBOut =
+      await leaveRequestsService.uploadSignatureFile(
+        req.body,
+        leaveRequestId,
+        employeeId
+      );
+
+    const ApiResBody =
+      leaveRequestsMappings.mapUploadedSignatureFileDBOutToApiModelsUploadedLeaveRequestSignatureFile(
+        uploadedSignatureFileDBOut
+      );
+
+    return res
+      .status(201)
+      .set("Content-Type", "application/vnd.api+json")
+      .json(ApiResBody);
   } catch (err: any) {
     return next(err);
   }

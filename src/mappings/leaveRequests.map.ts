@@ -3,6 +3,7 @@ import { LeaveType, LeaveRequestStatus } from "@prisma/client";
 import * as apiModels from "../models/AntenaPeople";
 import * as dbModels from "../models/db/leaveRequests.model";
 import * as employeesdbModels from "../models/db/employees.model";
+import * as signatureFilesdbModels from "../models/db/signatureFiles.model";
 import * as employeesMappings from "../mappings/employees.map";
 
 /**
@@ -254,6 +255,43 @@ export function mapApiModelsUpdateLeaveRequestToDBModelsPrismaLeaveRequestUpdate
     leaveTypeDetails: attributes.leaveTypeDetails,
     status: attributes.status,
     rejectReason: attributes.rejectReason,
+  };
+}
+
+/**
+ * Utility Function that Maps the Uploaded Signature File db query result to the Response Object
+ * @param uploadedSignatureFileDBOut The DB Query Result Object
+ * @returns The Mapped Signature File Api Response Object
+ */
+export function mapUploadedSignatureFileDBOutToApiModelsUploadedLeaveRequestSignatureFile(
+  uploadedSignatureFileDBOut: [
+    signatureFilesdbModels.IDPrismaLeaveRequestSignatureFilesGetPayload,
+    dbModels.uploadSignatureFilePrismaLeaveRequestGetPayload
+  ]
+): apiModels.UploadedLeaveRequestSignatureFile {
+  const [newSignatureFile, updatedLeaveRequest] = uploadedSignatureFileDBOut;
+  return {
+    data: {
+      id: newSignatureFile.id,
+      type: apiModels.LeaveRequestSignatureFileTypeEnum.SignatureFile,
+      relationships: {
+        leaveRequest: {
+          data: {
+            id: updatedLeaveRequest.id,
+            type: apiModels.LeaveRequestsTypeEnum.LeaveRequests,
+          },
+        },
+      },
+    },
+    included: [
+      {
+        id: updatedLeaveRequest.id,
+        type: apiModels.LeaveRequestsTypeEnum.LeaveRequests,
+        attributes: {
+          status: getLeaveStatusAPIEnumFromDBEnum(updatedLeaveRequest.status),
+        },
+      },
+    ],
   };
 }
 

@@ -1,4 +1,4 @@
-import { Router } from "express";
+import express, { Router } from "express";
 
 import * as leaveRequestsController from "../controllers/leaveRequests.controller";
 import * as auth from "../middleware/auth";
@@ -28,6 +28,13 @@ leaveRequestsRouter.patch(
   "/leave-requests/:leaveRequestId",
   auth.verifyToken(TokenTypeEnum.ACCESS_USER),
   leaveRequestsController.updateLeaveRequestHandler
+);
+
+leaveRequestsRouter.post(
+  "/leave-requests/:leaveRequestId/signature-file",
+  express.raw({ type: "image/png" }),
+  auth.verifyToken(TokenTypeEnum.ACCESS_USER),
+  leaveRequestsController.uploadSignatureFileHandler
 );
 
 export default leaveRequestsRouter;

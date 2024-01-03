@@ -12,6 +12,7 @@ const envConfig = {
   LOGO_URL: process.env.LOGO_URL!,
   JWT_SECRET: process.env.JWT_SECRET!,
   SERVER_URL: process.env.SERVER_URL!,
+  SIGNATURE_DIRECTORY: process.env.SIGNATURE_DIRECTORY!,
 };
 
 export function checkRequiredEnvVariables(): void {
